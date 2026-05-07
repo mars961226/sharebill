@@ -1,0 +1,14 @@
+.next/
+node_modules/
+coverage/
+dist/
+tsconfig.tsbuildinfo
+
+.env
+.env.local
+.env.*.local
+
+*.log
+
+prisma/dev.db
+prisma/dev.db-journal
