@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum BookMemberType {
+  REAL
+  PLACEHOLDER
+}
+
+enum BookRole {
+  ADMIN
+  MEMBER
+}
+
+enum SplitMethod {
+  EQUAL
+  CUSTOM
+}
+
+model User {
+  id                   String               @id @default(cuid())
+  email                String               @unique
+  passwordHash         String
+  displayName          String
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  sessions             Session[]
+  passwordResetTokens  PasswordResetToken[]
+  bookMembers          BookMember[]
+  createdBooks         Book[]               @relation("BookCreator")
+  createdExpenses      Expense[]            @relation("ExpenseCreator")
+  confirmedSettlements Settlement[]         @relation("SettlementConfirmer")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Book {
+  id          String       @id @default(cuid())
+  name        String
+  currency    String       @default("EUR")
+  createdById String
+  inviteCode  String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   User         @relation("BookCreator", fields: [createdById], references: [id])
+  members     BookMember[]
+  expenses    Expense[]
+  settlements Settlement[]
+
+  @@index([createdById])
+}
+
+model BookMember {
+  id                  String               @id @default(cuid())
+  bookId              String
+  userId              String?
+  displayName         String
+  type                BookMemberType
+  role                BookRole             @default(MEMBER)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  book                Book                 @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user                User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  paidExpenses        Expense[]            @relation("ExpensePayer")
+  expenseParticipants ExpenseParticipant[]
+  settlementsPaid     Settlement[]         @relation("SettlementPayer")
+  settlementsReceived Settlement[]         @relation("SettlementReceiver")
+
+  @@unique([bookId, userId])
+  @@index([bookId])
+  @@index([userId])
+}
+
+model Expense {
+  id                      String               @id @default(cuid())
+  bookId                  String
+  title                   String
+  expenseDate             DateTime
+  amountCents             Int
+  currency                String               @default("EUR")
+  payerMemberId           String
+  splitMethod             SplitMethod
+  splitTotalCents         Int
+  roundingDifferenceCents Int                  @default(0)
+  createdById             String
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  book                    Book                 @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  payer                   BookMember           @relation("ExpensePayer", fields: [payerMemberId], references: [id])
+  createdBy               User                 @relation("ExpenseCreator", fields: [createdById], references: [id])
+  participants            ExpenseParticipant[]
+
+  @@index([bookId])
+  @@index([payerMemberId])
+  @@index([createdById])
+}
+
+model ExpenseParticipant {
+  id              String     @id @default(cuid())
+  expenseId       String
+  memberId        String
+  owedAmountCents Int
+  expense         Expense    @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member          BookMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, memberId])
+  @@index([memberId])
+}
+
+model Settlement {
+  id               String     @id @default(cuid())
+  bookId           String
+  payerMemberId    String
+  receiverMemberId String
+  amountCents      Int
+  confirmedById    String
+  confirmedAt      DateTime   @default(now())
+  createdAt        DateTime   @default(now())
+  book             Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  payer            BookMember @relation("SettlementPayer", fields: [payerMemberId], references: [id])
+  receiver         BookMember @relation("SettlementReceiver", fields: [receiverMemberId], references: [id])
+  confirmedBy      User       @relation("SettlementConfirmer", fields: [confirmedById], references: [id])
+
+  @@index([bookId])
+  @@index([payerMemberId])
+  @@index([receiverMemberId])
+}
