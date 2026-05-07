@@ -33,6 +33,7 @@ Current local environment:
 - The app uses `npm` and `package-lock.json`.
 - `npm run dev` runs `next dev --turbo`.
 - Turbopack is used because the standard webpack dev server did not reliably serve generated CSS/JS chunks in the Codex desktop local environment.
+- `next.config.ts` allows `127.0.0.1` as a local development origin so Codex's in-app browser can access Next dev assets without cross-origin warnings.
 
 ## 3. Application Architecture
 
@@ -133,6 +134,23 @@ MVP has:
 - No settlement reversal.
 
 The recommended settlement path can be computed dynamically from current balances.
+
+### 4.6 Consumption Statistics
+
+Book overview includes a per-member consumption ranking.
+
+Important distinction:
+
+- Consumption statistics are based on `ExpenseParticipant.owedAmountCents`.
+- They are not based on `Expense.payerMemberId` or payer totals.
+- A member who never paid at checkout can still have a non-zero consumption total if they participated in expenses.
+
+Ranking rules:
+
+- Sort by total consumed amount descending.
+- Members with the same consumed total share the same rank.
+- The next rank skips accordingly, for example `#1`, `#1`, `#3`.
+- Tied members are sorted by display name for stable output.
 
 ## 5. Settlement Algorithm
 
@@ -255,10 +273,11 @@ SMTP_FROM="ShareBill <noreply@sharebill.local>"
 5. Add email service and local email configuration. Done.
 6. Add book creation/list/join. Done.
 7. Add member and placeholder member flows. In progress.
-8. Add expense CRUD.
-9. Add balance and settlement path pages.
-10. Add settlement confirmation.
-11. Add focused tests for money, balances, and permissions.
+8. Add expense CRUD. Done.
+9. Add balance and settlement path pages. Done for book overview.
+10. Add settlement confirmation. Done.
+11. Add consumption statistics. Done for book overview.
+12. Add focused tests for money, balances, and permissions.
 
 ## 10. Initial Test Focus
 

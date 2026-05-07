@@ -52,6 +52,9 @@ export default async function BookMembersPage({
           </p>
         </div>
         <div className="topbar-actions">
+          <Link className="button secondary" href={`/books/${bookId}/expenses`}>
+            Expenses
+          </Link>
           <Link className="button secondary" href={`/books/${bookId}`}>
             Overview
           </Link>
@@ -60,6 +63,18 @@ export default async function BookMembersPage({
           </Link>
         </div>
       </header>
+
+      <nav className="tab-nav" aria-label="Book navigation">
+        <Link className="tab-link" href={`/books/${bookId}`}>
+          Overview
+        </Link>
+        <Link className="tab-link" href={`/books/${bookId}/expenses`}>
+          Expenses
+        </Link>
+        <Link className="tab-link active" href={`/books/${bookId}/members`}>
+          Members
+        </Link>
+      </nav>
 
       <section className="two-column">
         <div className="section-block">
