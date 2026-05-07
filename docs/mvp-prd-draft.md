@@ -14,6 +14,7 @@ The MVP focuses on:
 - Expense creation with payer, participants, reason, date, amount, and split details.
 - Automatic settlement recommendations.
 - Settlement confirmation.
+- Consumption statistics based on participant split amounts.
 - Support for placeholder members before real users join.
 
 The MVP does not need native mobile apps. It should provide web UI layouts suitable for both desktop and mobile browsers.
@@ -313,6 +314,7 @@ User profile rule:
 ### 6.2 Book List
 
 - Show books the user belongs to.
+- Show each book's total recorded expense amount.
 - Create book.
 - Join book by invite code.
 - Open book.
@@ -321,9 +323,19 @@ User profile rule:
 
 - Summary balances.
 - Recommended settlement path.
+- Settlement confirmation.
+- Settlement history.
+- Per-member total consumed ranking.
 - Quick add expense button.
 - Recent expenses.
 - Member list preview.
+
+Consumption ranking rule:
+
+- Rank by the sum of each member's participant split amounts.
+- Do not rank by payer total, because paying at checkout is only an advance payment.
+- Members with equal consumption totals share the same rank.
+- The next rank skips by position, for example `#1`, `#1`, `#3`.
 
 ### 6.4 Expenses
 

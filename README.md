@@ -22,16 +22,24 @@ Implemented so far:
 - Password reset flow backend and UI.
 - SMTP email abstraction for welcome and reset emails.
 - Book creation, book list, book overview, and invite-code join flow.
+- Book list cards with total recorded expense amounts.
 - Book member list.
 - Temporary member creation and admin-only deletion.
+- Expense creation, editing, deletion, equal split, and custom amount split.
+- Book overview balances based on recorded expenses and confirmed settlements.
+- Recommended settlement path display with each member having at most one outgoing payment.
+- Settlement confirmation with payer/receiver/admin permission checks.
+- Settlement history.
+- Per-member total consumed ranking based on participant split amounts, including tied ranks.
 - Core money, balance, and settlement-path utilities with tests.
 
 Not implemented yet:
 
-- Expense CRUD UI and persistence.
 - Placeholder member claiming during invite join UI.
-- Balance display based on real expenses.
-- Settlement confirmation UI and persistence flow.
+- Inline temporary member creation from the expense form.
+- Placeholder member rename UI.
+- Invite code regeneration.
+- Book settings editing.
 - Mailpit/Mailhog local email service wiring.
 
 ## Local Setup

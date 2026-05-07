@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { assertCustomSplitTotal, equalSplit } from "@/lib/money";
+import {
+  assertCustomSplitTotal,
+  equalSplit,
+  euroInputValue,
+  parseEuroToCents,
+} from "@/lib/money";
 
 describe("equalSplit", () => {
   it("rounds up split amounts to cents", () => {
@@ -28,5 +33,25 @@ describe("assertCustomSplitTotal", () => {
     expect(() => assertCustomSplitTotal(1000, [333, 333, 333])).toThrow(
       "Custom split total must equal the expense amount.",
     );
+  });
+});
+
+describe("parseEuroToCents", () => {
+  it("parses whole and decimal euro amounts", () => {
+    expect(parseEuroToCents("12")).toBe(1200);
+    expect(parseEuroToCents("12.3")).toBe(1230);
+    expect(parseEuroToCents("12,34")).toBe(1234);
+  });
+
+  it("rejects unsupported precision", () => {
+    expect(() => parseEuroToCents("12.345")).toThrow(
+      "Amount must use up to two decimal places.",
+    );
+  });
+});
+
+describe("euroInputValue", () => {
+  it("formats cents for number inputs", () => {
+    expect(euroInputValue(1234)).toBe("12.34");
   });
 });

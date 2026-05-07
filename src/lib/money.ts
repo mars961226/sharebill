@@ -9,6 +9,25 @@ export function formatEuro(cents: number): string {
   }).format(amount);
 }
 
+export function parseEuroToCents(input: FormDataEntryValue | null): number {
+  if (typeof input !== "string") {
+    throw new Error("Amount is required.");
+  }
+
+  const normalized = input.trim().replace(",", ".");
+
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    throw new Error("Amount must use up to two decimal places.");
+  }
+
+  const [euros, cents = ""] = normalized.split(".");
+  return Number(euros) * 100 + Number(cents.padEnd(2, "0"));
+}
+
+export function euroInputValue(cents: number): string {
+  return (cents / 100).toFixed(2);
+}
+
 export function equalSplit(
   amountCents: number,
   participantCount: number,

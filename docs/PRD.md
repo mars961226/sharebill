@@ -17,6 +17,7 @@ The MVP prioritizes correct backend behavior, simple web workflows, and a usable
 - Let the system calculate member balances and recommend a settlement path.
 - Ensure each person has at most one outgoing settlement payment in the recommended path.
 - Let eligible users confirm settlements.
+- Let members review per-person total consumed amounts at the end of a book.
 - Preserve historical expense and settlement records.
 
 ## 3. Non-Goals
@@ -143,7 +144,11 @@ The list should show:
 - Book name.
 - User role.
 - Member count.
-- Basic current balance summary for the logged-in user.
+- Total recorded expense amount for the book.
+
+Future improvement:
+
+- Add a current balance summary for the logged-in user after the MVP balance UI stabilizes.
 
 ### 7.3 Joining A Book
 
@@ -514,6 +519,9 @@ Requirements:
 
 - Show member balances.
 - Show recommended settlement path.
+- Show confirm settlement action to eligible users.
+- Show settlement history.
+- Show total consumed ranking.
 - Show quick action to add expense.
 - Show recent expenses.
 - Show member preview.
@@ -560,6 +568,25 @@ Requirements:
 - Show current recommended settlement path.
 - Show confirm action only to eligible users.
 - Show settlement history.
+
+### 13.8 Consumption Statistics
+
+Book overview should show a ranked per-member consumption summary.
+
+Definition:
+
+- Consumption total means the sum of amounts a member participated in and owed across all expenses.
+- Consumption total is based on `ExpenseParticipant.owedAmountCents`.
+- Consumption total is not the same as the amount a member paid at checkout.
+
+Rules:
+
+- Include real members and placeholder members.
+- Include members with zero consumption.
+- Sort by total consumed amount descending.
+- If multiple members have the same total consumed amount, they share the same rank.
+- The next rank should skip by position, for example `#1`, `#1`, `#3`.
+- Tied members should have stable ordering by display name.
 
 ## 14. API Requirements
 

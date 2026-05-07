@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatEuro } from "@/lib/money";
 import { logoutAction } from "@/server/auth/actions";
 import { requireCurrentUser } from "@/server/auth/session";
 import { prisma } from "@/server/db";
@@ -15,6 +16,11 @@ export default async function BooksPage() {
           _count: {
             select: {
               members: true,
+            },
+          },
+          expenses: {
+            select: {
+              amountCents: true,
             },
           },
         },
@@ -49,20 +55,28 @@ export default async function BooksPage() {
       </header>
       {memberships.length > 0 ? (
         <section className="grid">
-          {memberships.map((membership) => (
-            <Link
-              className="book-card"
-              href={`/books/${membership.book.id}`}
-              key={membership.id}
-            >
-              <h2>{membership.book.name}</h2>
-              <p>
-                {membership.book._count.members} members ·{" "}
-                {membership.role.toLowerCase()}
-              </p>
-              <strong>EUR 0.00</strong>
-            </Link>
-          ))}
+          {memberships.map((membership) => {
+            const totalExpenseCents = membership.book.expenses.reduce(
+              (sum, expense) => sum + expense.amountCents,
+              0,
+            );
+
+            return (
+              <Link
+                className="book-card"
+                href={`/books/${membership.book.id}`}
+                key={membership.id}
+              >
+                <h2>{membership.book.name}</h2>
+                <p>
+                  {membership.book._count.members} members ·{" "}
+                  {membership.role.toLowerCase()}
+                </p>
+                <span className="card-metric-label">Total recorded</span>
+                <strong>{formatEuro(totalExpenseCents)}</strong>
+              </Link>
+            );
+          })}
         </section>
       ) : (
         <section className="empty-state">
