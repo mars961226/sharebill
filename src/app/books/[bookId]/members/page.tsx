@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ClaimPlaceholderMemberForm } from "@/components/members/claim-placeholder-member-form";
 import { CreatePlaceholderMemberForm } from "@/components/members/create-placeholder-member-form";
+import { DeletePlaceholderMemberForm } from "@/components/members/delete-placeholder-member-form";
 import { requireCurrentUser } from "@/server/auth/session";
 import { prisma } from "@/server/db";
-import { deletePlaceholderMemberAction } from "@/server/members/actions";
 
 export default async function BookMembersPage({
   params,
@@ -24,6 +25,16 @@ export default async function BookMembersPage({
         include: {
           members: {
             orderBy: [{ type: "asc" }, { createdAt: "asc" }],
+            include: {
+              _count: {
+                select: {
+                  paidExpenses: true,
+                  expenseParticipants: true,
+                  settlementsPaid: true,
+                  settlementsReceived: true,
+                },
+              },
+            },
           },
         },
       },
@@ -93,23 +104,71 @@ export default async function BookMembersPage({
           <p className="eyebrow">Temporary members</p>
           {placeholderMembers.length > 0 ? (
             <div className="list">
-              {placeholderMembers.map((member) => (
-                <div className="list-row" key={member.id}>
-                  <span>{member.displayName}</span>
-                  <div className="row-actions">
-                    <strong>not joined</strong>
-                    {currentMember.role === "ADMIN" ? (
-                      <form action={deletePlaceholderMemberAction}>
-                        <input name="bookId" type="hidden" value={bookId} />
-                        <input name="memberId" type="hidden" value={member.id} />
-                        <button className="button danger small" type="submit">
+              {placeholderMembers.map((member) => {
+                const usageCount = placeholderUsageCount(member);
+                const settlementUsageCount = placeholderSettlementUsageCount(member);
+                const isUsed = usageCount > 0;
+                const canClaim = settlementUsageCount === 0;
+
+                return (
+                  <div className="list-row member-row" key={member.id}>
+                    <div>
+                      <span>{member.displayName}</span>
+                      {isUsed ? (
+                        <p className="field-help">
+                          Used in expenses or settlements, so it cannot be deleted.
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="row-actions">
+                      <strong>{isUsed ? "used" : "not joined"}</strong>
+                      {canClaim ? (
+                        <ClaimPlaceholderMemberForm
+                          bookId={bookId}
+                          displayName={member.displayName}
+                          memberId={member.id}
+                        />
+                      ) : (
+                        <button
+                          className="button secondary small"
+                          disabled
+                          title="Temporary members used in confirmed settlements cannot be claimed yet."
+                          type="button"
+                        >
+                          Claim
+                        </button>
+                      )}
+                      {currentMember.role === "ADMIN" ? (
+                        isUsed ? (
+                          <button
+                            className="button danger small"
+                            disabled
+                            title="Temporary members used in expenses or settlements cannot be deleted."
+                            type="button"
+                          >
+                            Delete
+                          </button>
+                        ) : (
+                          <DeletePlaceholderMemberForm
+                            bookId={bookId}
+                            displayName={member.displayName}
+                            memberId={member.id}
+                          />
+                        )
+                      ) : (
+                        <button
+                          className="button danger small"
+                          disabled
+                          title="Only book admins can delete temporary members."
+                          type="button"
+                        >
                           Delete
                         </button>
-                      </form>
-                    ) : null}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="muted">
@@ -124,5 +183,30 @@ export default async function BookMembersPage({
         <CreatePlaceholderMemberForm bookId={bookId} />
       </section>
     </main>
+  );
+}
+
+function placeholderSettlementUsageCount(member: {
+  _count: {
+    settlementsPaid: number;
+    settlementsReceived: number;
+  };
+}): number {
+  return member._count.settlementsPaid + member._count.settlementsReceived;
+}
+
+function placeholderUsageCount(member: {
+  _count: {
+    paidExpenses: number;
+    expenseParticipants: number;
+    settlementsPaid: number;
+    settlementsReceived: number;
+  };
+}): number {
+  return (
+    member._count.paidExpenses +
+    member._count.expenseParticipants +
+    member._count.settlementsPaid +
+    member._count.settlementsReceived
   );
 }

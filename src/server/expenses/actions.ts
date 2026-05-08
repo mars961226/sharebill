@@ -6,15 +6,31 @@ import { assertCustomSplitTotal, equalSplit, parseEuroToCents } from "@/lib/mone
 import { canDeleteExpense } from "@/lib/permissions";
 import { requireCurrentUser } from "@/server/auth/session";
 import { prisma } from "@/server/db";
+import {
+  getExpenseLockSnapshot,
+  isExpenseLocked,
+  LOCKED_EXPENSE_MESSAGE,
+} from "@/server/expenses/locks";
 
 export type ExpenseActionState = {
   error?: string;
   success?: string;
+  values?: ExpenseFormValues;
 };
 
 type ParticipantSplit = {
   memberId: string;
   owedAmountCents: number;
+};
+
+export type ExpenseFormValues = {
+  title: string;
+  expenseDate: string;
+  amount: string;
+  payerMemberId: string;
+  splitMethod: "EQUAL" | "CUSTOM";
+  participantMemberIds: string[];
+  customAmountsByMemberId: Record<string, string>;
 };
 
 export async function createExpenseAction(
@@ -25,20 +41,23 @@ export async function createExpenseAction(
   const parsed = await parseExpenseForm(formData);
 
   if ("error" in parsed) {
-    return { error: parsed.error };
+    return { error: parsed.error, values: snapshotExpenseFormValues(formData) };
   }
 
   const currentMember = await getCurrentMember(parsed.bookId, user.id);
 
   if (!currentMember) {
-    return { error: "You do not have access to this book." };
+    return {
+      error: "You do not have access to this book.",
+      values: snapshotExpenseFormValues(formData),
+    };
   }
 
   const memberIds = await getBookMemberIds(parsed.bookId);
   const validationError = validateMemberSelection(parsed, memberIds);
 
   if (validationError) {
-    return { error: validationError };
+    return { error: validationError, values: snapshotExpenseFormValues(formData) };
   }
 
   await prisma.expense.create({
@@ -75,17 +94,20 @@ export async function updateExpenseAction(
   const parsed = await parseExpenseForm(formData);
 
   if (!expenseId) {
-    return { error: "Expense is required." };
+    return { error: "Expense is required.", values: snapshotExpenseFormValues(formData) };
   }
 
   if ("error" in parsed) {
-    return { error: parsed.error };
+    return { error: parsed.error, values: snapshotExpenseFormValues(formData) };
   }
 
   const currentMember = await getCurrentMember(parsed.bookId, user.id);
 
   if (!currentMember) {
-    return { error: "You do not have access to this book." };
+    return {
+      error: "You do not have access to this book.",
+      values: snapshotExpenseFormValues(formData),
+    };
   }
 
   const expense = await prisma.expense.findFirst({
@@ -95,18 +117,26 @@ export async function updateExpenseAction(
     },
     select: {
       id: true,
+      createdAt: true,
     },
   });
 
   if (!expense) {
-    return { error: "Expense not found." };
+    return { error: "Expense not found.", values: snapshotExpenseFormValues(formData) };
+  }
+
+  if (isExpenseLocked(expense, await getExpenseLockSnapshot(parsed.bookId))) {
+    return {
+      error: LOCKED_EXPENSE_MESSAGE,
+      values: snapshotExpenseFormValues(formData),
+    };
   }
 
   const memberIds = await getBookMemberIds(parsed.bookId);
   const validationError = validateMemberSelection(parsed, memberIds);
 
   if (validationError) {
-    return { error: validationError };
+    return { error: validationError, values: snapshotExpenseFormValues(formData) };
   }
 
   await prisma.$transaction(async (tx) => {
@@ -165,6 +195,7 @@ export async function deleteExpenseAction(formData: FormData): Promise<void> {
     select: {
       id: true,
       createdById: true,
+      createdAt: true,
     },
   });
 
@@ -174,6 +205,10 @@ export async function deleteExpenseAction(formData: FormData): Promise<void> {
 
   if (!canDeleteExpense(currentMember, expense.createdById)) {
     throw new Error("You can only delete expenses you created.");
+  }
+
+  if (isExpenseLocked(expense, await getExpenseLockSnapshot(bookId))) {
+    throw new Error(LOCKED_EXPENSE_MESSAGE);
   }
 
   await prisma.expense.delete({
@@ -361,6 +396,30 @@ function readString(formData: FormData, key: string): string {
   const value = formData.get(key);
 
   return typeof value === "string" ? value.trim() : "";
+}
+
+function snapshotExpenseFormValues(formData: FormData): ExpenseFormValues {
+  const splitMethod = readString(formData, "splitMethod");
+  const participantMemberIds = formData
+    .getAll("participantMemberIds")
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
+  const customAmountsByMemberId: Record<string, string> = {};
+
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("customAmount:") && typeof value === "string") {
+      customAmountsByMemberId[key.slice("customAmount:".length)] = value;
+    }
+  }
+
+  return {
+    title: readString(formData, "title"),
+    expenseDate: readString(formData, "expenseDate"),
+    amount: readString(formData, "amount"),
+    payerMemberId: readString(formData, "payerMemberId"),
+    splitMethod: splitMethod === "CUSTOM" ? "CUSTOM" : "EQUAL",
+    participantMemberIds,
+    customAmountsByMemberId,
+  };
 }
 
 function revalidateExpensePaths(bookId: string): void {

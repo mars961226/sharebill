@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db";
 import { requireCurrentUser } from "@/server/auth/session";
 import {
+  claimPlaceholderMemberSchema,
   createPlaceholderMemberSchema,
   deletePlaceholderMemberSchema,
 } from "@/server/members/validation";
+import { mergePlaceholderIntoRealMember } from "@/server/members/claim";
 
 export type MemberActionState = {
   error?: string;
@@ -121,5 +123,38 @@ export async function deletePlaceholderMemberAction(
   });
 
   revalidatePath(`/books/${parsed.bookId}`);
+  revalidatePath(`/books/${parsed.bookId}/members`);
+}
+
+export async function claimPlaceholderMemberAction(
+  formData: FormData,
+): Promise<void> {
+  const user = await requireCurrentUser();
+  const parsed = claimPlaceholderMemberSchema.parse(Object.fromEntries(formData));
+
+  const currentMember = await prisma.bookMember.findFirst({
+    where: {
+      bookId: parsed.bookId,
+      userId: user.id,
+      type: "REAL",
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!currentMember) {
+    throw new Error("You do not have access to this book.");
+  }
+
+  await mergePlaceholderIntoRealMember({
+    bookId: parsed.bookId,
+    placeholderMemberId: parsed.memberId,
+    realMemberId: currentMember.id,
+  });
+
+  revalidatePath("/books");
+  revalidatePath(`/books/${parsed.bookId}`);
+  revalidatePath(`/books/${parsed.bookId}/expenses`);
   revalidatePath(`/books/${parsed.bookId}/members`);
 }

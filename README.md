@@ -24,18 +24,25 @@ Implemented so far:
 - Book creation, book list, book overview, and invite-code join flow.
 - Book list cards with total recorded expense amounts.
 - Book member list.
-- Temporary member creation and admin-only deletion.
+- Temporary member creation, admin-only deletion, used-member delete blocking, and self-claim.
+- Invite join choice between joining as yourself or claiming an available temporary member.
 - Expense creation, editing, deletion, equal split, and custom amount split.
+- Expense add form defaults the payer to the logged-in member.
+- Custom split validation preserves submitted form values after validation errors.
+- Destructive delete actions show confirmation prompts.
 - Book overview balances based on recorded expenses and confirmed settlements.
 - Recommended settlement path display with each member having at most one outgoing payment.
 - Settlement confirmation with payer/receiver/admin permission checks.
+- Settlement confirmation prompt before writing irreversible settlement records.
 - Settlement history.
+- Soft locking of expenses that existed before a confirmed settlement.
+- Expense history shows both spent date and added date.
+- Mobile expense page layout shows the add form before expense history.
 - Per-member total consumed ranking based on participant split amounts, including tied ranks.
-- Core money, balance, and settlement-path utilities with tests.
+- Core money, balance, settlement-path, and placeholder-claim utilities with tests.
 
 Not implemented yet:
 
-- Placeholder member claiming during invite join UI.
 - Inline temporary member creation from the expense form.
 - Placeholder member rename UI.
 - Invite code regeneration.

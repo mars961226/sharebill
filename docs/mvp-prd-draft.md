@@ -1,6 +1,6 @@
 # ShareBill MVP PRD Draft
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 ## 1. Product Positioning
 
@@ -168,6 +168,8 @@ MVP behavior:
 - Placeholder members do not have login credentials.
 - Placeholder members cannot perform actions.
 - When the real person joins later, the book admin or the joining user can link that real user account to the placeholder member.
+- If claimable placeholder members exist during invite join, the joining user must choose either "join as myself" or claim one placeholder member.
+- A user who joined as themself can later claim an available placeholder from the members page.
 
 Recommended linking flow:
 
@@ -183,12 +185,18 @@ Important rule:
 - Linking a real user to a placeholder member should preserve all historical expenses and balances.
 - It should not create a new member balance from zero.
 - Placeholder member claiming does not require admin approval in MVP.
+- Placeholder claiming can only be performed by the current logged-in user for themself.
+- Admin cannot assign a placeholder to another user.
+- If the real member already exists in the book, claim merges the placeholder's payer references and participant split records into the real member.
+- If the placeholder has participated in a confirmed settlement, claim is blocked for MVP.
+- Claiming is irreversible and requires a confirmation dialog.
 
 Confirmed MVP rule:
 
 - Yes, any member can create placeholder members while adding an expense.
 - Admin can rename, merge, or link placeholder members later.
 - Admin can delete unused placeholder members before they are used in expenses or settlements.
+- Used placeholder members show disabled delete controls with an explanation.
 
 ## 4. Settlement Logic
 
@@ -252,9 +260,10 @@ When a settlement is confirmed:
 
 Settlement status rule:
 
-- For MVP, clicking confirm immediately creates a confirmed settlement.
+- For MVP, confirming after the warning dialog immediately creates a confirmed settlement.
 - There is no pending settlement state in MVP.
 - Add pending/double-confirmation later if users need stronger audit control.
+- Expenses that already existed when a settlement is confirmed are locked against future edit/delete actions.
 
 ### 4.4 Date Rules
 
@@ -344,6 +353,10 @@ Consumption ranking rule:
 - Edit any expense in the book.
 - Delete own expense.
 - Admin delete any expense.
+- New expense payer defaults to the logged-in member.
+- Custom split validation preserves submitted form values after an error.
+- Expense history shows both spent date and added date.
+- Mobile layout shows the add expense form before the history list.
 
 ### 6.5 Members
 

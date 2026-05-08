@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ConfirmSettlementForm } from "@/components/settlements/confirm-settlement-form";
 import { calculateBalances } from "@/lib/balances";
 import { formatEuro } from "@/lib/money";
 import { canConfirmSettlement } from "@/lib/permissions";
 import { buildSettlementPath } from "@/lib/settlements";
 import { prisma } from "@/server/db";
 import { requireCurrentUser } from "@/server/auth/session";
-import { confirmSettlementAction } from "@/server/settlements/actions";
 
 export default async function BookOverviewPage({
   params,
@@ -202,27 +202,21 @@ export default async function BookOverviewPage({
                     <div className="row-actions">
                       <strong>{formatEuro(settlement.amountCents)}</strong>
                       {canConfirm ? (
-                        <form action={confirmSettlementAction}>
-                          <input name="bookId" type="hidden" value={bookId} />
-                          <input
-                            name="payerMemberId"
-                            type="hidden"
-                            value={settlement.fromMemberId}
-                          />
-                          <input
-                            name="receiverMemberId"
-                            type="hidden"
-                            value={settlement.toMemberId}
-                          />
-                          <input
-                            name="amountCents"
-                            type="hidden"
-                            value={settlement.amountCents}
-                          />
-                          <button className="button primary small" type="submit">
-                            Confirm
-                          </button>
-                        </form>
+                        <ConfirmSettlementForm
+                          amountCents={settlement.amountCents}
+                          amountLabel={formatEuro(settlement.amountCents)}
+                          bookId={bookId}
+                          payerMemberId={settlement.fromMemberId}
+                          payerName={
+                            memberNameById.get(settlement.fromMemberId) ??
+                            "Unknown member"
+                          }
+                          receiverMemberId={settlement.toMemberId}
+                          receiverName={
+                            memberNameById.get(settlement.toMemberId) ??
+                            "Unknown member"
+                          }
+                        />
                       ) : null}
                     </div>
                   </div>
@@ -287,9 +281,14 @@ export default async function BookOverviewPage({
           <div className="list">
             {member.book.expenses.map((expense) => (
               <div className="list-row" key={expense.id}>
-                <span>
-                  {expense.title} · {expense.payer.displayName}
-                </span>
+                <div>
+                  <span>{expense.title}</span>
+                  <p className="field-help">
+                    Spent {expense.expenseDate.toLocaleDateString("en-GB")} · added{" "}
+                    {expense.createdAt.toLocaleDateString("en-GB")} · paid by{" "}
+                    {expense.payer.displayName}
+                  </p>
+                </div>
                 <strong>{formatEuro(expense.amountCents)}</strong>
               </div>
             ))}

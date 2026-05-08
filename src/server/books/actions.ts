@@ -5,6 +5,7 @@ import { prisma } from "@/server/db";
 import { requireCurrentUser } from "@/server/auth/session";
 import { createInviteCode } from "@/server/books/invite-code";
 import { createBookSchema, joinBookSchema } from "@/server/books/validation";
+import { assertPlaceholderCanBeClaimed } from "@/server/members/claim";
 
 export type BookActionState = {
   error?: string;
@@ -58,7 +59,16 @@ export async function joinBookAction(
       inviteCode,
     },
     include: {
-      members: true,
+      members: {
+        include: {
+          _count: {
+            select: {
+              settlementsPaid: true,
+              settlementsReceived: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -72,16 +82,48 @@ export async function joinBookAction(
     redirect(`/books/${book.id}`);
   }
 
-  if (parsed.data.placeholderMemberId) {
+  const claimablePlaceholders = book.members.filter(
+    (member) =>
+      member.type === "PLACEHOLDER" &&
+      member.userId === null &&
+      member._count.settlementsPaid === 0 &&
+      member._count.settlementsReceived === 0,
+  );
+  const joinMode = parsed.data.joinMode ?? "SELF";
+  const claimPrefix = "CLAIM:";
+  const placeholderMemberId = joinMode.startsWith(claimPrefix)
+    ? joinMode.slice(claimPrefix.length)
+    : parsed.data.placeholderMemberId;
+
+  if (claimablePlaceholders.length > 0 && !parsed.data.joinMode) {
+    return { error: "Choose whether to join as yourself or claim a temporary member." };
+  }
+
+  if (joinMode.startsWith(claimPrefix)) {
+    if (!placeholderMemberId) {
+      return { error: "Choose a temporary member to claim." };
+    }
+
     const placeholder = book.members.find(
       (member) =>
-        member.id === parsed.data.placeholderMemberId &&
+        member.id === placeholderMemberId &&
         member.type === "PLACEHOLDER" &&
         member.userId === null,
     );
 
     if (!placeholder) {
       return { error: "That placeholder member cannot be claimed." };
+    }
+
+    try {
+      await assertPlaceholderCanBeClaimed(placeholder.id);
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error
+            ? error.message
+            : "That temporary member cannot be claimed.",
+      };
     }
 
     await prisma.bookMember.update({
