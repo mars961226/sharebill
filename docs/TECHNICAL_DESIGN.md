@@ -1,6 +1,6 @@
 # ShareBill MVP Technical Design
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 ## 1. Stack Decision
 
@@ -91,6 +91,11 @@ Important rule:
 - Claiming a placeholder member sets `userId` on that existing `BookMember` and changes its type to `REAL`.
 - If a user chooses to claim a placeholder during invite join, the app should claim the placeholder instead of creating a second `BookMember`.
 - If a user joins without claiming a placeholder, the app creates a new real `BookMember`.
+- If an existing real member later claims a placeholder, merge the placeholder ledger into that user's existing `BookMember`.
+- During merge, update expense payer references from placeholder to real member.
+- During merge, move `ExpenseParticipant` rows from placeholder to real member; if both rows exist on the same expense, add the placeholder owed amount into the real member row and delete the placeholder row.
+- Block placeholder claim when the placeholder has participated in a confirmed settlement, because settlement history references would otherwise need an explicit correction/audit model.
+- Only the currently logged-in user's member record can receive a claimed placeholder.
 
 This preserves historical balances.
 
@@ -99,6 +104,8 @@ Placeholder cleanup rule:
 - Admins can delete unused placeholder members.
 - A placeholder member is considered used if it appears as an expense payer, expense participant, settlement payer, or settlement receiver.
 - Used placeholder members must not be deleted because that would corrupt historical financial records.
+- Used placeholder delete buttons should be disabled in the UI with an explanation.
+- Placeholder delete and claim actions should use client-side confirmation prompts before submitting irreversible server actions.
 
 ### 4.3 Expenses
 
@@ -111,6 +118,21 @@ Money:
 
 - Store all money in integer cents.
 - Do not use floating point arithmetic for persisted calculations.
+
+Expense lock rule:
+
+- MVP uses a computed soft lock instead of adding lock fields to the database.
+- For a book, find the latest confirmed settlement by `confirmedAt`.
+- An expense is locked when `expense.createdAt <= latestSettlement.confirmedAt`.
+- Locked expenses cannot be edited or deleted.
+- This preserves the ledger state that existed when settlement was confirmed while still allowing new post-settlement expenses, even if users backdate the expense date.
+
+Expense form behavior:
+
+- New expense forms default `payerMemberId` to the current user's `BookMember`.
+- Server action validation errors return a submitted-value snapshot so the client form can remount uncontrolled inputs with the user's previous values.
+- Custom split validation should preserve title, date, amount, payer, split method, selected participants, and custom amounts after an error.
+- Expense deletion should use a client-side confirmation prompt before submitting.
 
 ### 4.4 Balances
 
@@ -132,6 +154,7 @@ MVP has:
 
 - No pending settlement state.
 - No settlement reversal.
+- A client-side confirmation prompt before creating a settlement.
 
 The recommended settlement path can be computed dynamically from current balances.
 
@@ -243,6 +266,7 @@ Responsive behavior:
 
 - Desktop can use sidebar navigation within a book.
 - Mobile can use bottom navigation for overview, expenses, members, and settlements.
+- On the expenses page, desktop keeps the history/form two-column layout while mobile shows the add form before the expense history.
 - UI can be simple but should not block core workflows.
 
 ## 8. Local Development Plan
@@ -272,7 +296,7 @@ SMTP_FROM="ShareBill <noreply@sharebill.local>"
 4. Add authentication and sessions. Done.
 5. Add email service and local email configuration. Done.
 6. Add book creation/list/join. Done.
-7. Add member and placeholder member flows. In progress.
+7. Add member and placeholder member flows. Claim/delete flows done; rename and inline creation still pending.
 8. Add expense CRUD. Done.
 9. Add balance and settlement path pages. Done for book overview.
 10. Add settlement confirmation. Done.
@@ -289,4 +313,6 @@ Highest priority tests:
 - Balance calculation with confirmed settlements.
 - Settlement path one-outgoing-payment guarantee.
 - Placeholder member claim preserving history.
+- Placeholder member claim merging same-expense participant rows.
+- Placeholder member claim blocked by confirmed settlement usage.
 - Permission checks for edit/delete/confirm settlement.

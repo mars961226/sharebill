@@ -32,26 +32,43 @@ export function ExpenseForm({
   bookId,
   members,
   initialValue,
+  defaultPayerMemberId,
 }: {
   bookId: string;
   members: ExpenseFormMember[];
   initialValue?: ExpenseFormInitialValue;
+  defaultPayerMemberId?: string;
 }) {
   const action = initialValue ? updateExpenseAction : createExpenseAction;
   const [state, formAction, isPending] = useActionState(action, initialState);
+  const submittedValues = state.values;
+  const selectedSplitMethod =
+    submittedValues?.splitMethod ?? initialValue?.splitMethod ?? "EQUAL";
+  const selectedPayerMemberId =
+    submittedValues?.payerMemberId ??
+    initialValue?.payerMemberId ??
+    defaultPayerMemberId;
   const selectedParticipants = new Set(
-    initialValue?.participants.map((participant) => participant.memberId) ??
+    submittedValues?.participantMemberIds ??
+      initialValue?.participants.map((participant) => participant.memberId) ??
       members.map((member) => member.id),
   );
   const customAmounts = new Map(
-    initialValue?.participants.map((participant) => [
-      participant.memberId,
-      participant.amount,
-    ]) ?? [],
+    submittedValues
+      ? Object.entries(submittedValues.customAmountsByMemberId)
+      : (initialValue?.participants.map((participant) => [
+          participant.memberId,
+          participant.amount,
+        ]) ?? []),
   );
+  const formResetKey = JSON.stringify(submittedValues ?? initialValue ?? {});
 
   return (
-    <form action={formAction} className="panel compact-panel expense-form">
+    <form
+      action={formAction}
+      className="panel compact-panel expense-form"
+      key={formResetKey}
+    >
       <div>
         <p className="eyebrow">Expense</p>
         <h2>{initialValue ? "Edit expense" : "Add expense"}</h2>
@@ -68,7 +85,7 @@ export function ExpenseForm({
         <label>
           Reason
           <input
-            defaultValue={initialValue?.title}
+            defaultValue={submittedValues?.title ?? initialValue?.title}
             name="title"
             placeholder="Dinner"
             type="text"
@@ -78,7 +95,11 @@ export function ExpenseForm({
         <label>
           Date
           <input
-            defaultValue={initialValue?.expenseDate ?? todayInputValue()}
+            defaultValue={
+              submittedValues?.expenseDate ??
+              initialValue?.expenseDate ??
+              todayInputValue()
+            }
             name="expenseDate"
             type="date"
           />
@@ -87,7 +108,7 @@ export function ExpenseForm({
         <label>
           Amount
           <input
-            defaultValue={initialValue?.amount}
+            defaultValue={submittedValues?.amount ?? initialValue?.amount}
             inputMode="decimal"
             name="amount"
             placeholder="24.50"
@@ -97,7 +118,7 @@ export function ExpenseForm({
 
         <label>
           Paid by
-          <select defaultValue={initialValue?.payerMemberId} name="payerMemberId">
+          <select defaultValue={selectedPayerMemberId} name="payerMemberId">
             {members.map((member) => (
               <option key={member.id} value={member.id}>
                 {member.displayName}
@@ -113,7 +134,7 @@ export function ExpenseForm({
         <div className="segmented-control">
           <label>
             <input
-              defaultChecked={!initialValue || initialValue.splitMethod === "EQUAL"}
+              defaultChecked={selectedSplitMethod === "EQUAL"}
               name="splitMethod"
               type="radio"
               value="EQUAL"
@@ -122,7 +143,7 @@ export function ExpenseForm({
           </label>
           <label>
             <input
-              defaultChecked={initialValue?.splitMethod === "CUSTOM"}
+              defaultChecked={selectedSplitMethod === "CUSTOM"}
               name="splitMethod"
               type="radio"
               value="CUSTOM"

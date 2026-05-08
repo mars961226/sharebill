@@ -6,5 +6,6 @@ export const createBookSchema = z.object({
 
 export const joinBookSchema = z.object({
   inviteCode: z.string().trim().min(1),
-  placeholderMemberId: z.string().min(1).optional(),
+  joinMode: z.string().optional(),
+  placeholderMemberId: z.string().optional(),
 });

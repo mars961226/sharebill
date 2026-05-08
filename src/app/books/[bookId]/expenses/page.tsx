@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DeleteExpenseForm } from "@/components/expenses/delete-expense-form";
 import { ExpenseForm } from "@/components/expenses/expense-form";
 import { formatEuro } from "@/lib/money";
 import { canDeleteExpense } from "@/lib/permissions";
 import { requireCurrentUser } from "@/server/auth/session";
 import { prisma } from "@/server/db";
-import { deleteExpenseAction } from "@/server/expenses/actions";
+import {
+  getExpenseLockSnapshot,
+  isExpenseLocked,
+  LOCKED_EXPENSE_MESSAGE,
+} from "@/server/expenses/locks";
 
 export default async function BookExpensesPage({
   params,
@@ -51,6 +56,8 @@ export default async function BookExpensesPage({
     notFound();
   }
 
+  const lockSnapshot = await getExpenseLockSnapshot(bookId);
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -84,7 +91,7 @@ export default async function BookExpensesPage({
       </nav>
 
       <section className="two-column wide-left">
-        <div className="section-block">
+        <div className="section-block expense-history-section">
           <p className="eyebrow">Expense history</p>
           {currentMember.book.expenses.length > 0 ? (
             <div className="expense-list">
@@ -93,17 +100,31 @@ export default async function BookExpensesPage({
                   currentMember,
                   expense.createdById,
                 );
+                const isLocked = isExpenseLocked(expense, lockSnapshot);
 
                 return (
                   <article className="expense-item" key={expense.id}>
                     <div className="expense-item-main">
                       <div>
                         <h2>{expense.title}</h2>
-                        <p className="muted">
-                          {expense.expenseDate.toLocaleDateString("en-GB")} · paid
-                          by {expense.payer.displayName} · added by{" "}
-                          {expense.createdBy.displayName}
-                        </p>
+                        <dl className="meta-grid">
+                          <div>
+                            <dt>Spent</dt>
+                            <dd>{expense.expenseDate.toLocaleDateString("en-GB")}</dd>
+                          </div>
+                          <div>
+                            <dt>Added</dt>
+                            <dd>{expense.createdAt.toLocaleDateString("en-GB")}</dd>
+                          </div>
+                          <div>
+                            <dt>Paid by</dt>
+                            <dd>{expense.payer.displayName}</dd>
+                          </div>
+                          <div>
+                            <dt>Added by</dt>
+                            <dd>{expense.createdBy.displayName}</dd>
+                          </div>
+                        </dl>
                       </div>
                       <strong>{formatEuro(expense.amountCents)}</strong>
                     </div>
@@ -115,25 +136,44 @@ export default async function BookExpensesPage({
                         </span>
                       ))}
                     </div>
+                    {isLocked ? (
+                      <p className="field-help">{LOCKED_EXPENSE_MESSAGE}</p>
+                    ) : null}
                     <div className="row-actions">
-                      <Link
-                        className="button secondary small"
-                        href={`/books/${bookId}/expenses/${expense.id}/edit`}
-                      >
-                        Edit
-                      </Link>
+                      {isLocked ? (
+                        <button
+                          className="button secondary small"
+                          disabled
+                          title={LOCKED_EXPENSE_MESSAGE}
+                          type="button"
+                        >
+                          Edit
+                        </button>
+                      ) : (
+                        <Link
+                          className="button secondary small"
+                          href={`/books/${bookId}/expenses/${expense.id}/edit`}
+                        >
+                          Edit
+                        </Link>
+                      )}
                       {canDelete ? (
-                        <form action={deleteExpenseAction}>
-                          <input name="bookId" type="hidden" value={bookId} />
-                          <input
-                            name="expenseId"
-                            type="hidden"
-                            value={expense.id}
-                          />
-                          <button className="button danger small" type="submit">
+                        isLocked ? (
+                          <button
+                            className="button danger small"
+                            disabled
+                            title={LOCKED_EXPENSE_MESSAGE}
+                            type="button"
+                          >
                             Delete
                           </button>
-                        </form>
+                        ) : (
+                          <DeleteExpenseForm
+                            bookId={bookId}
+                            expenseId={expense.id}
+                            expenseTitle={expense.title}
+                          />
+                        )
                       ) : null}
                     </div>
                   </article>
@@ -147,9 +187,10 @@ export default async function BookExpensesPage({
           )}
         </div>
 
-        <div className="form-section inline-form-section">
+        <div className="form-section inline-form-section expense-form-section">
           <ExpenseForm
             bookId={bookId}
+            defaultPayerMemberId={currentMember.id}
             members={currentMember.book.members.map((member) => ({
               id: member.id,
               displayName: member.displayName,

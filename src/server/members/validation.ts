@@ -9,3 +9,8 @@ export const deletePlaceholderMemberSchema = z.object({
   bookId: z.string().min(1),
   memberId: z.string().min(1),
 });
+
+export const claimPlaceholderMemberSchema = z.object({
+  bookId: z.string().min(1),
+  memberId: z.string().min(1),
+});

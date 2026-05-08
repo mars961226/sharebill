@@ -1,6 +1,6 @@
 # ShareBill MVP PRD
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 ## 1. Overview
 
@@ -157,6 +157,13 @@ Users can join a book by:
 - Opening an invite link.
 - Entering an invite code.
 
+If claimable placeholder members exist, the join page must require the joining user to choose one of:
+
+- Join as myself.
+- Claim one available placeholder member.
+
+If the user enters an invite code manually and claim options exist, the app should first load the invite context and show the required choice before submitting the join.
+
 Invite rule:
 
 - Invite links and invite codes do not expire by time in MVP.
@@ -231,10 +238,16 @@ Rules:
 
 - Claiming does not require admin approval in MVP.
 - A placeholder member can be linked to only one real user.
-- A real user can claim only one placeholder member per book.
+- Only the current logged-in user can claim a placeholder for themself.
+- Admin cannot force-assign a placeholder to another user.
 - During invite join, claiming a placeholder should convert that existing member record into the real user's member record instead of creating a duplicate member.
+- A user who joins as themself can later claim an available placeholder from the members page.
+- A user who is already a real book member can still claim an available placeholder; the placeholder's payer references and participant split records are merged into the user's existing member record.
+- If the placeholder and the real member are both participants in the same expense, their owed amounts are combined into the real member's participant split.
+- A placeholder that has participated in a confirmed settlement cannot be claimed in MVP.
 - Claiming must preserve all historical expenses, balances, and settlements.
 - Claiming must not reset that member's balance to zero.
+- Claiming is irreversible and must show a confirmation dialog before submitting.
 
 Admin can still rename or manage placeholder members for cleanup.
 
@@ -248,6 +261,8 @@ Rules:
 - Placeholder members can be deleted only while they are not linked to a real user.
 - Placeholder members cannot be deleted after they have been used as an expense payer, expense participant, settlement payer, or settlement receiver.
 - Deletion is intended for cleanup of mistakenly-created placeholder members before they affect financial history.
+- Delete controls for used placeholder members should be disabled with a clear explanation instead of failing only after submit.
+- Placeholder deletion is irreversible and must show a confirmation dialog before submitting.
 
 ## 10. Expense Requirements
 
@@ -279,6 +294,7 @@ Each expense must include:
 - Each expense has exactly one payer.
 - Payer can be a real member or a placeholder member.
 - Payer does not have to be included as a participant, although the UI should allow including them easily.
+- On new expense forms, the default payer should be the logged-in user's member record.
 
 ### 10.4 Participant Rules
 
@@ -323,6 +339,7 @@ Rules:
 - Custom split amounts are entered in cents or converted safely to cents.
 - Custom split total must exactly equal the expense total.
 - If the custom split total does not equal the expense total, the expense cannot be saved.
+- If custom split validation fails, the form should preserve the user's submitted values so they can adjust the split without re-entering the whole expense.
 
 ### 10.6 Editing And Deletion
 
@@ -330,6 +347,17 @@ Rules:
 - Normal members can delete only expenses they created.
 - Admins can delete any expense.
 - Placeholder members cannot edit or delete anything.
+- Expenses created before or at the time of the latest confirmed settlement are locked.
+- Locked expenses cannot be edited or deleted by any member, including admins.
+- The UI should show disabled edit/delete controls with a clear explanation for locked expenses.
+- Backend validation must reject edits and deletes for locked expenses.
+- Expense deletion is irreversible and must show a confirmation dialog before submitting.
+
+### 10.7 Expense Display
+
+- Expense history should show both the spent date and the added date.
+- Expense sorting should continue to use expense date, with later expense dates shown first.
+- The book overview recent expense list should also expose enough date context to distinguish when an expense happened from when it was recorded.
 
 ## 11. Balance Calculation
 
@@ -475,6 +503,8 @@ When an eligible user confirms a settlement:
 - The system immediately creates a confirmed settlement record.
 - The settlement is included in future balance calculations.
 - The settlement cannot be revoked in MVP.
+- The UI must show a confirmation dialog before creating the settlement, because MVP has no reversal flow.
+- Expenses that already existed when the settlement was confirmed become locked against future edit/delete actions.
 
 ### 12.5 Settlement History
 
@@ -535,6 +565,8 @@ Requirements:
 - Edit expense.
 - Delete expense according to permission rules.
 - Filter or sort by date if simple to include.
+- On mobile, show the add expense form before expense history.
+- On desktop, keep the existing two-column layout with expense history and form side by side.
 
 ### 13.5 Expense Form
 
@@ -548,6 +580,7 @@ Requirements:
 - Add placeholder member if needed.
 - Choose equal split or custom amount split.
 - Validate split rules before save.
+- Preserve submitted values after validation errors.
 
 ### 13.6 Members Page
 
@@ -724,6 +757,8 @@ The exact schema can be adapted during implementation, but the core entities sho
 - Equal split must round up to cents.
 - Non-members cannot access book data.
 - Placeholder members cannot authenticate or perform actions.
+- Placeholder claim must enforce current-user-only ownership.
+- Placeholder claim must reject placeholders that participated in confirmed settlements.
 - Confirm settlement must enforce payer/receiver/admin permission.
 - Confirmed settlements cannot be revoked.
 
@@ -749,6 +784,10 @@ The exact schema can be adapted during implementation, but the core entities sho
 - Admin can delete an unused placeholder member.
 - Admin cannot delete a placeholder member after it has been used in financial records.
 - A real user can claim a placeholder member without admin approval.
+- A real user can claim an available placeholder during invite join.
+- A real user can claim an available placeholder later from the members page.
+- Placeholder claim merges payer references and participant split records into the current user's member record.
+- Placeholder claim is blocked if the placeholder participated in a confirmed settlement.
 - Historical balances survive the claim.
 
 ### 17.4 Expenses
@@ -757,9 +796,14 @@ The exact schema can be adapted during implementation, but the core entities sho
 - A member can create a custom split expense.
 - Equal split rounds up.
 - Custom split rejects totals that do not equal the expense amount.
+- Custom split validation preserves the submitted form values.
+- New expenses default the payer to the logged-in member.
+- Expense history shows both spent date and added date.
 - Any member can edit any expense.
 - Normal members can delete their own expenses only.
 - Admin can delete any expense.
+- Delete expense action shows a confirmation prompt.
+- Expenses that existed before a confirmed settlement cannot be edited or deleted.
 
 ### 17.5 Balances
 
@@ -789,21 +833,27 @@ Minimum test scenarios:
 6. Create expense with custom split and verify exact total validation.
 7. Create placeholder member and use it in an expense.
 8. Claim placeholder member and verify historical balances are preserved.
-9. Delete an unused placeholder member as admin.
-10. Verify a normal member cannot delete a placeholder member.
-11. Verify used placeholder members cannot be deleted.
-12. Verify member can edit another member's expense.
-13. Verify member cannot delete another member's expense.
-14. Verify admin can delete any expense.
-15. Verify balance calculation after multiple expenses.
-16. Verify recommended settlement path gives each member at most one outgoing payment.
-17. Confirm a settlement as payer.
-18. Confirm a settlement as receiver.
-19. Confirm a settlement as admin.
-20. Verify unrelated member cannot confirm a settlement.
-21. Verify confirmed settlement changes future balances.
-22. Verify confirmed settlement cannot be revoked.
-23. Regenerate invite code/link and verify old invite no longer works.
+9. Claim placeholder during invite join and verify no duplicate member is created.
+10. Claim placeholder later from the members page and verify same-expense participant splits are merged.
+11. Verify placeholder claim is blocked after confirmed settlement participation.
+12. Delete an unused placeholder member as admin.
+13. Verify a normal member cannot delete a placeholder member.
+14. Verify used placeholder members cannot be deleted.
+15. Verify member can edit another member's expense.
+16. Verify member cannot delete another member's expense.
+17. Verify admin can delete any expense.
+18. Verify delete actions require confirmation.
+19. Verify custom split validation preserves submitted values after an error.
+20. Verify balance calculation after multiple expenses.
+21. Verify recommended settlement path gives each member at most one outgoing payment.
+22. Confirm a settlement as payer.
+23. Confirm a settlement as receiver.
+24. Confirm a settlement as admin.
+25. Verify unrelated member cannot confirm a settlement.
+26. Verify confirmed settlement changes future balances.
+27. Verify confirmed settlement cannot be revoked.
+28. Verify expenses that existed before settlement confirmation are locked.
+29. Regenerate invite code/link and verify old invite no longer works.
 
 ## 19. Implementation Notes
 
