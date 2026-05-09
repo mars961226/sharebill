@@ -30,10 +30,12 @@ export default async function BookOverviewPage({
             },
           },
           expenses: {
-            orderBy: [{ expenseDate: "desc" }, { createdAt: "desc" }],
+            orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
             take: 5,
             include: {
               payer: true,
+              createdBy: true,
+              updatedBy: true,
             },
           },
           settlements: {
@@ -111,12 +113,6 @@ export default async function BookOverviewPage({
           </p>
         </div>
         <div className="topbar-actions">
-          <Link className="button primary" href={`/books/${bookId}/expenses`}>
-            Add expense
-          </Link>
-          <Link className="button secondary" href={`/books/${bookId}/members`}>
-            Members
-          </Link>
           <Link className="button secondary" href="/books">
             Back to books
           </Link>
@@ -127,8 +123,8 @@ export default async function BookOverviewPage({
         <Link className="tab-link active" href={`/books/${bookId}`}>
           Overview
         </Link>
-        <Link className="tab-link" href={`/books/${bookId}/expenses`}>
-          Expenses
+        <Link className="tab-link tab-link-primary" href={`/books/${bookId}/expenses`}>
+          Add expense
         </Link>
         <Link className="tab-link" href={`/books/${bookId}/members`}>
           Members
@@ -284,9 +280,11 @@ export default async function BookOverviewPage({
                 <div>
                   <span>{expense.title}</span>
                   <p className="field-help">
-                    Spent {expense.expenseDate.toLocaleDateString("en-GB")} · added{" "}
-                    {expense.createdAt.toLocaleDateString("en-GB")} · paid by{" "}
-                    {expense.payer.displayName}
+                    Spent {expense.expenseDate.toLocaleDateString("en-GB")} ·{" "}
+                    {expense.updatedBy && isEditedExpense(expense)
+                      ? `edited ${expense.updatedAt.toLocaleDateString("en-GB")} by ${expense.updatedBy.displayName}`
+                      : `added ${expense.createdAt.toLocaleDateString("en-GB")} by ${expense.createdBy.displayName}`}{" "}
+                    · paid by {expense.payer.displayName}
                   </p>
                 </div>
                 <strong>{formatEuro(expense.amountCents)}</strong>
@@ -319,6 +317,13 @@ function balanceClassName(cents: number): string {
   }
 
   return "balance-zero";
+}
+
+function isEditedExpense(expense: {
+  createdAt: Date;
+  updatedAt: Date;
+}): boolean {
+  return expense.updatedAt.getTime() - expense.createdAt.getTime() > 1000;
 }
 
 function buildConsumptionRankings(

@@ -99,6 +99,7 @@ button:disabled {
 }
 
 .button {
+  appearance: none;
   display: inline-flex;
   min-height: 44px;
   align-items: center;
@@ -108,6 +109,8 @@ button:disabled {
   padding: 0 18px;
   cursor: pointer;
   font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .button.primary {
@@ -122,6 +125,7 @@ button:disabled {
 
 .button.secondary {
   background: var(--surface);
+  color: var(--text);
 }
 
 .button.danger {
@@ -162,11 +166,16 @@ button:disabled {
 }
 
 label {
+  min-width: 0;
   display: grid;
   gap: 8px;
   color: var(--muted);
   font-size: 14px;
   font-weight: 700;
+}
+
+input:not([type="checkbox"]):not([type="radio"]) {
+  width: 100%;
 }
 
 input {
@@ -177,7 +186,15 @@ input {
   color: var(--text);
 }
 
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  min-height: auto;
+  padding: 0;
+}
+
 select {
+  width: 100%;
   min-height: 44px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -217,6 +234,11 @@ select {
   gap: 12px;
 }
 
+.topbar-actions form {
+  display: flex;
+  min-width: 0;
+}
+
 .tab-nav {
   display: flex;
   gap: 8px;
@@ -228,17 +250,30 @@ select {
   display: inline-flex;
   min-height: 40px;
   align-items: center;
+  justify-content: center;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
   padding: 0 14px;
   color: var(--muted);
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .tab-link.active {
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.tab-link-primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.tab-link-primary.active {
+  background: var(--primary);
+  color: #ffffff;
 }
 
 .alert {
@@ -259,6 +294,41 @@ select {
   border: 1px solid #a8dbc2;
   background: #edf9f3;
   color: #11603a;
+}
+
+.join-summary {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  padding: 16px;
+}
+
+.join-summary strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 20px;
+}
+
+.join-summary dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.join-summary dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.join-summary dd {
+  margin: 3px 0 0;
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .grid {
@@ -369,12 +439,60 @@ select {
 }
 
 .member-row {
+  flex-direction: column;
   align-items: flex-start;
 }
 
 .member-row .field-help {
   margin-top: 6px;
   max-width: 360px;
+}
+
+.member-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.member-title-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.member-title-row strong {
+  justify-self: end;
+  color: var(--primary);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.member-row .row-actions {
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.member-row form {
+  min-width: 0;
+}
+
+.rename-member-form {
+  flex: 1 1 220px;
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.rename-member-form input {
+  min-height: 36px;
+}
+
+.rename-member-form .alert {
+  grid-column: 1 / -1;
 }
 
 .ranking-row span {
@@ -416,17 +534,28 @@ select {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  min-width: 0;
+}
+
+.expense-item-main > div {
+  min-width: 0;
 }
 
 .section-heading-row h2,
 .expense-item h2 {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.form-grid > *,
+.expense-form fieldset {
+  min-width: 0;
 }
 
 fieldset {
@@ -460,6 +589,39 @@ legend {
   color: var(--text);
 }
 
+.option-list {
+  display: grid;
+  gap: 10px;
+}
+
+.choice-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text);
+}
+
+.choice-card input {
+  min-height: auto;
+  margin-top: 3px;
+}
+
+.choice-card span {
+  display: grid;
+  gap: 3px;
+}
+
+.choice-card small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
 .segmented-control label {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -491,13 +653,14 @@ legend {
 }
 
 .meta-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(96px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px 14px;
   margin: 10px 0 0;
 }
 
 .meta-grid div {
+  flex: 0 0 auto;
   min-width: 0;
 }
 
@@ -505,6 +668,7 @@ legend {
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
   text-transform: uppercase;
 }
 
@@ -513,10 +677,12 @@ legend {
   overflow-wrap: anywhere;
   color: var(--text);
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .expense-item {
   display: grid;
+  min-width: 0;
   gap: 12px;
   border-bottom: 1px solid var(--border);
   padding: 0 0 16px;
@@ -546,8 +712,23 @@ legend {
   }
 
   .topbar-actions {
-    align-items: stretch;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  }
+
+  .topbar-actions form .button {
+    width: 100%;
+  }
+
+  .tab-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow-x: visible;
+  }
+
+  .tab-link {
+    min-width: 0;
+    padding: 0 8px;
   }
 
   .two-column {
@@ -556,10 +737,23 @@ legend {
 
   .two-column.wide-left,
   .form-grid,
-  .meta-grid,
   .segmented-control,
   .participant-row {
     grid-template-columns: 1fr;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .expense-item-main {
+    display: grid;
+    gap: 10px;
+  }
+
+  .expense-item-main strong {
+    justify-self: start;
   }
 
   .expense-form-section {
@@ -576,8 +770,10 @@ legend {
   }
 
   .member-row .row-actions {
-    align-items: stretch;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    gap: 6px;
     width: 100%;
   }
 
@@ -585,7 +781,25 @@ legend {
     width: 100%;
   }
 
+  .rename-member-form {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .rename-member-form input {
+    min-height: 38px;
+  }
+
   .button {
     width: 100%;
+  }
+
+  .rename-member-form .button {
+    width: auto;
+  }
+
+  .topbar-actions .button {
+    width: auto;
   }
 }

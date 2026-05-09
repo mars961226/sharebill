@@ -72,6 +72,7 @@ export async function createExpenseAction(
       splitTotalCents: parsed.splitTotalCents,
       roundingDifferenceCents: parsed.roundingDifferenceCents,
       createdById: user.id,
+      updatedById: user.id,
       participants: {
         create: parsed.participants.map((participant) => ({
           memberId: participant.memberId,
@@ -158,6 +159,7 @@ export async function updateExpenseAction(
         splitMethod: parsed.splitMethod,
         splitTotalCents: parsed.splitTotalCents,
         roundingDifferenceCents: parsed.roundingDifferenceCents,
+        updatedById: user.id,
         participants: {
           create: parsed.participants.map((participant) => ({
             memberId: participant.memberId,
@@ -172,19 +174,22 @@ export async function updateExpenseAction(
   redirect(`/books/${parsed.bookId}/expenses`);
 }
 
-export async function deleteExpenseAction(formData: FormData): Promise<void> {
+export async function deleteExpenseAction(
+  _previousState: ExpenseActionState,
+  formData: FormData,
+): Promise<ExpenseActionState> {
   const user = await requireCurrentUser();
   const bookId = readString(formData, "bookId");
   const expenseId = readString(formData, "expenseId");
 
   if (!bookId || !expenseId) {
-    throw new Error("Expense is required.");
+    return { error: "Expense is required." };
   }
 
   const currentMember = await getCurrentMember(bookId, user.id);
 
   if (!currentMember) {
-    throw new Error("You do not have access to this book.");
+    return { error: "You do not have access to this book." };
   }
 
   const expense = await prisma.expense.findFirst({
@@ -200,15 +205,15 @@ export async function deleteExpenseAction(formData: FormData): Promise<void> {
   });
 
   if (!expense) {
-    throw new Error("Expense not found.");
+    return { error: "Expense not found." };
   }
 
   if (!canDeleteExpense(currentMember, expense.createdById)) {
-    throw new Error("You can only delete expenses you created.");
+    return { error: "You can only delete expenses you created." };
   }
 
   if (isExpenseLocked(expense, await getExpenseLockSnapshot(bookId))) {
-    throw new Error(LOCKED_EXPENSE_MESSAGE);
+    return { error: LOCKED_EXPENSE_MESSAGE };
   }
 
   await prisma.expense.delete({
@@ -218,6 +223,7 @@ export async function deleteExpenseAction(formData: FormData): Promise<void> {
   });
 
   revalidateExpensePaths(bookId);
+  return { success: "Expense deleted." };
 }
 
 async function parseExpenseForm(

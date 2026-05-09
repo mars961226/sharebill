@@ -8,13 +8,25 @@ import { requireCurrentUser } from "@/server/auth/session";
 import { prisma } from "@/server/db";
 import { confirmSettlementSchema } from "@/server/settlements/validation";
 
-export async function confirmSettlementAction(formData: FormData): Promise<void> {
+export type SettlementActionState = {
+  error?: string;
+  success?: string;
+};
+
+export async function confirmSettlementAction(
+  _previousState: SettlementActionState,
+  formData: FormData,
+): Promise<SettlementActionState> {
   const user = await requireCurrentUser();
-  const parsed = confirmSettlementSchema.parse(Object.fromEntries(formData));
+  const parsed = confirmSettlementSchema.safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) {
+    return { error: "Settlement is required." };
+  }
 
   const currentMember = await prisma.bookMember.findFirst({
     where: {
-      bookId: parsed.bookId,
+      bookId: parsed.data.bookId,
       userId: user.id,
       type: "REAL",
     },
@@ -26,24 +38,24 @@ export async function confirmSettlementAction(formData: FormData): Promise<void>
   });
 
   if (!currentMember) {
-    throw new Error("You do not have access to this book.");
+    return { error: "You do not have access to this book." };
   }
 
   if (
     !canConfirmSettlement({
       member: currentMember,
       currentMemberId: currentMember.id,
-      payerMemberId: parsed.payerMemberId,
-      receiverMemberId: parsed.receiverMemberId,
+      payerMemberId: parsed.data.payerMemberId,
+      receiverMemberId: parsed.data.receiverMemberId,
     })
   ) {
-    throw new Error("You cannot confirm this settlement.");
+    return { error: "You cannot confirm this settlement." };
   }
 
   const [members, expenses, settlements] = await Promise.all([
     prisma.bookMember.findMany({
       where: {
-        bookId: parsed.bookId,
+        bookId: parsed.data.bookId,
       },
       select: {
         id: true,
@@ -51,7 +63,7 @@ export async function confirmSettlementAction(formData: FormData): Promise<void>
     }),
     prisma.expense.findMany({
       where: {
-        bookId: parsed.bookId,
+        bookId: parsed.data.bookId,
       },
       select: {
         payerMemberId: true,
@@ -65,7 +77,7 @@ export async function confirmSettlementAction(formData: FormData): Promise<void>
     }),
     prisma.settlement.findMany({
       where: {
-        bookId: parsed.bookId,
+        bookId: parsed.data.bookId,
       },
       select: {
         payerMemberId: true,
@@ -85,26 +97,27 @@ export async function confirmSettlementAction(formData: FormData): Promise<void>
   );
   const currentRecommendation = buildSettlementPath(balances).find(
     (settlement) =>
-      settlement.fromMemberId === parsed.payerMemberId &&
-      settlement.toMemberId === parsed.receiverMemberId &&
-      settlement.amountCents === parsed.amountCents,
+      settlement.fromMemberId === parsed.data.payerMemberId &&
+      settlement.toMemberId === parsed.data.receiverMemberId &&
+      settlement.amountCents === parsed.data.amountCents,
   );
 
   if (!currentRecommendation) {
-    throw new Error("This settlement is no longer current.");
+    return { error: "This settlement is no longer current." };
   }
 
   await prisma.settlement.create({
     data: {
-      bookId: parsed.bookId,
-      payerMemberId: parsed.payerMemberId,
-      receiverMemberId: parsed.receiverMemberId,
-      amountCents: parsed.amountCents,
+      bookId: parsed.data.bookId,
+      payerMemberId: parsed.data.payerMemberId,
+      receiverMemberId: parsed.data.receiverMemberId,
+      amountCents: parsed.data.amountCents,
       confirmedById: user.id,
     },
   });
 
   revalidatePath("/books");
-  revalidatePath(`/books/${parsed.bookId}`);
-  revalidatePath(`/books/${parsed.bookId}/expenses`);
+  revalidatePath(`/books/${parsed.data.bookId}`);
+  revalidatePath(`/books/${parsed.data.bookId}/expenses`);
+  return { success: "Settlement confirmed." };
 }

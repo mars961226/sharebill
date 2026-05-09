@@ -8,22 +8,23 @@ export default async function JoinPage({
 }: {
   searchParams: Promise<{ code?: string }>;
 }) {
-  await requireCurrentUser();
+  const user = await requireCurrentUser();
   const { code } = await searchParams;
-  const book = code
+  const normalizedCode = code?.trim().toUpperCase();
+  const book = normalizedCode
     ? await prisma.book.findUnique({
         where: {
-          inviteCode: code.toUpperCase(),
+          inviteCode: normalizedCode,
         },
         select: {
+          id: true,
+          name: true,
           members: {
-            where: {
-              type: "PLACEHOLDER",
-              userId: null,
-            },
             select: {
               id: true,
               displayName: true,
+              type: true,
+              userId: true,
               _count: {
                 select: {
                   settlementsPaid: true,
@@ -38,10 +39,18 @@ export default async function JoinPage({
         },
       })
     : null;
+  const realMemberCount =
+    book?.members.filter((member) => member.type === "REAL").length ?? 0;
+  const placeholderCount =
+    book?.members.filter(
+      (member) => member.type === "PLACEHOLDER" && member.userId === null,
+    ).length ?? 0;
   const claimablePlaceholderOptions =
     book?.members
       .filter(
         (member) =>
+          member.type === "PLACEHOLDER" &&
+          member.userId === null &&
           member._count.settlementsPaid === 0 &&
           member._count.settlementsReceived === 0,
       )
@@ -49,12 +58,26 @@ export default async function JoinPage({
         id: member.id,
         displayName: member.displayName,
       })) ?? [];
+  const existingMember = book?.members.find((member) => member.userId === user.id);
 
   return (
     <main className="auth-page">
       <div className="stack">
         <JoinBookForm
-          inviteCode={code}
+          inviteCode={normalizedCode}
+          inviteLookupError={
+            normalizedCode && !book ? "No book found for that invite code." : undefined
+          }
+          bookSummary={
+            book
+              ? {
+                  name: book.name,
+                  realMemberCount,
+                  placeholderCount,
+                }
+              : undefined
+          }
+          alreadyJoinedBookId={existingMember ? book?.id : undefined}
           placeholderOptions={claimablePlaceholderOptions}
         />
         <Link className="button secondary" href="/books">

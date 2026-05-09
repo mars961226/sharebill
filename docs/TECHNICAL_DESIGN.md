@@ -1,6 +1,6 @@
 # ShareBill MVP Technical Design
 
-Last updated: 2026-05-08
+Last updated: 2026-05-09
 
 ## 1. Stack Decision
 
@@ -102,6 +102,7 @@ This preserves historical balances.
 Placeholder cleanup rule:
 
 - Admins can delete unused placeholder members.
+- Admins can rename unclaimed placeholder members without changing ledger relationships.
 - A placeholder member is considered used if it appears as an expense payer, expense participant, settlement payer, or settlement receiver.
 - Used placeholder members must not be deleted because that would corrupt historical financial records.
 - Used placeholder delete buttons should be disabled in the UI with an explanation.
@@ -113,6 +114,8 @@ Expense data should be normalized:
 
 - `Expense` stores the payer, title, date, amount, split method, and audit fields.
 - `ExpenseParticipant` stores each participant's owed amount.
+- `Expense.updatedById` records the last user who edited the expense.
+- Book overview latest activity is ordered by `Expense.updatedAt` so edits surface as activity, not only original creation.
 
 Money:
 
@@ -296,7 +299,7 @@ SMTP_FROM="ShareBill <noreply@sharebill.local>"
 4. Add authentication and sessions. Done.
 5. Add email service and local email configuration. Done.
 6. Add book creation/list/join. Done.
-7. Add member and placeholder member flows. Claim/delete flows done; rename and inline creation still pending.
+7. Add member and placeholder member flows. Claim/delete/rename flows done; inline creation still pending.
 8. Add expense CRUD. Done.
 9. Add balance and settlement path pages. Done for book overview.
 10. Add settlement confirmation. Done.

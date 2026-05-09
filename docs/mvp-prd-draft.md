@@ -1,6 +1,6 @@
 # ShareBill MVP PRD Draft
 
-Last updated: 2026-05-08
+Last updated: 2026-05-09
 
 ## 1. Product Positioning
 
@@ -132,6 +132,7 @@ Each expense should record:
 - Split method.
 - Per-participant owed amount.
 - Creator.
+- Last editor.
 - Created time.
 - Updated time.
 
@@ -356,6 +357,7 @@ Consumption ranking rule:
 - New expense payer defaults to the logged-in member.
 - Custom split validation preserves submitted form values after an error.
 - Expense history shows both spent date and added date.
+- Expense edits record the last editing user and appear in latest activity.
 - Mobile layout shows the add expense form before the history list.
 
 ### 6.5 Members
@@ -364,6 +366,7 @@ Consumption ranking rule:
 - Placeholder members.
 - Invite link/code.
 - Link placeholder member to real user.
+- Rename unclaimed placeholder members as admin.
 - Admin member management.
 
 Invite rule:

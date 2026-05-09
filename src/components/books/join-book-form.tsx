@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { joinBookAction, type BookActionState } from "@/server/books/actions";
 
@@ -12,9 +13,19 @@ export type JoinPlaceholderOption = {
 
 export function JoinBookForm({
   inviteCode,
+  inviteLookupError,
+  bookSummary,
+  alreadyJoinedBookId,
   placeholderOptions,
 }: {
   inviteCode?: string;
+  inviteLookupError?: string;
+  bookSummary?: {
+    name: string;
+    realMemberCount: number;
+    placeholderCount: number;
+  };
+  alreadyJoinedBookId?: string;
   placeholderOptions?: JoinPlaceholderOption[];
 }) {
   const [state, formAction, isPending] = useActionState(
@@ -66,6 +77,30 @@ export function JoinBookForm({
         <p className="eyebrow">Invite</p>
         <h1>Join book</h1>
       </div>
+      {bookSummary ? (
+        <section className="join-summary" aria-label="Invite preview">
+          <div>
+            <span className="field-help">You are joining</span>
+            <strong>{bookSummary.name}</strong>
+          </div>
+          <dl>
+            <div>
+              <dt>Real members</dt>
+              <dd>{bookSummary.realMemberCount}</dd>
+            </div>
+            <div>
+              <dt>Temporary</dt>
+              <dd>{bookSummary.placeholderCount}</dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
+      {inviteLookupError ? (
+        <p className="alert error">{inviteLookupError}</p>
+      ) : null}
+      {alreadyJoinedBookId ? (
+        <p className="alert success">You are already a member of this book.</p>
+      ) : null}
       {state.error ? <p className="alert error">{state.error}</p> : null}
       <label>
         Invite code
@@ -76,23 +111,31 @@ export function JoinBookForm({
           type="text"
         />
       </label>
-      {hasPlaceholderOptions ? (
+      {hasPlaceholderOptions && !alreadyJoinedBookId ? (
         <fieldset>
           <legend>Join identity</legend>
           <div className="option-list">
-            <label className="checkbox-label">
+            <label className="choice-card">
               <input name="joinMode" required type="radio" value="SELF" />
-              <span>Join as myself</span>
+              <span>
+                <strong>Join as myself</strong>
+                <small>Create a new member for your account.</small>
+              </span>
             </label>
             {placeholderOptions.map((placeholder) => (
-              <label className="checkbox-label" key={placeholder.id}>
+              <label className="choice-card" key={placeholder.id}>
                 <input
                   name="joinMode"
                   required
                   type="radio"
                   value={`CLAIM:${placeholder.id}`}
                 />
-                <span>Claim temporary member {placeholder.displayName}</span>
+                <span>
+                  <strong>Claim {placeholder.displayName}</strong>
+                  <small>
+                    Merge this temporary member's expenses into your account.
+                  </small>
+                </span>
               </label>
             ))}
           </div>
@@ -101,9 +144,15 @@ export function JoinBookForm({
           </p>
         </fieldset>
       ) : null}
-      <button className="button primary" disabled={isPending} type="submit">
-        {isPending ? "Joining..." : "Join book"}
-      </button>
+      {alreadyJoinedBookId ? (
+        <Link className="button primary" href={`/books/${alreadyJoinedBookId}`}>
+          Open book
+        </Link>
+      ) : (
+        <button className="button primary" disabled={isPending} type="submit">
+          {isPending ? "Joining..." : "Join book"}
+        </button>
+      )}
     </form>
   );
 }

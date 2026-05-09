@@ -1,6 +1,6 @@
 # ShareBill MVP PRD
 
-Last updated: 2026-05-08
+Last updated: 2026-05-09
 
 ## 1. Overview
 
@@ -281,6 +281,7 @@ Each expense must include:
 - Per-participant split amount.
 - Rounding difference, when applicable.
 - Creator.
+- Last editor.
 - Created time.
 - Updated time.
 
@@ -357,7 +358,8 @@ Rules:
 
 - Expense history should show both the spent date and the added date.
 - Expense sorting should continue to use expense date, with later expense dates shown first.
-- The book overview recent expense list should also expose enough date context to distinguish when an expense happened from when it was recorded.
+- The book overview latest activity list should expose enough date context to distinguish when an expense happened from when it was recorded or edited.
+- When an expense is edited, the latest activity list should show who edited it and when.
 
 ## 11. Balance Calculation
 
@@ -712,6 +714,7 @@ The exact schema can be adapted during implementation, but the core entities sho
 - Split total cents.
 - Rounding difference cents.
 - Created by user ID.
+- Updated by user ID, nullable for older records.
 - Created time.
 - Updated time.
 
@@ -783,6 +786,7 @@ The exact schema can be adapted during implementation, but the core entities sho
 - Placeholder member appears in expenses, balances, and settlement paths.
 - Admin can delete an unused placeholder member.
 - Admin cannot delete a placeholder member after it has been used in financial records.
+- Admin can rename an unclaimed placeholder member.
 - A real user can claim a placeholder member without admin approval.
 - A real user can claim an available placeholder during invite join.
 - A real user can claim an available placeholder later from the members page.
@@ -799,6 +803,7 @@ The exact schema can be adapted during implementation, but the core entities sho
 - Custom split validation preserves the submitted form values.
 - New expenses default the payer to the logged-in member.
 - Expense history shows both spent date and added date.
+- Expense edits are recorded with the last editing user and appear in latest activity.
 - Any member can edit any expense.
 - Normal members can delete their own expenses only.
 - Admin can delete any expense.
@@ -833,27 +838,29 @@ Minimum test scenarios:
 6. Create expense with custom split and verify exact total validation.
 7. Create placeholder member and use it in an expense.
 8. Claim placeholder member and verify historical balances are preserved.
-9. Claim placeholder during invite join and verify no duplicate member is created.
-10. Claim placeholder later from the members page and verify same-expense participant splits are merged.
-11. Verify placeholder claim is blocked after confirmed settlement participation.
-12. Delete an unused placeholder member as admin.
-13. Verify a normal member cannot delete a placeholder member.
-14. Verify used placeholder members cannot be deleted.
-15. Verify member can edit another member's expense.
-16. Verify member cannot delete another member's expense.
-17. Verify admin can delete any expense.
-18. Verify delete actions require confirmation.
-19. Verify custom split validation preserves submitted values after an error.
-20. Verify balance calculation after multiple expenses.
-21. Verify recommended settlement path gives each member at most one outgoing payment.
-22. Confirm a settlement as payer.
-23. Confirm a settlement as receiver.
-24. Confirm a settlement as admin.
-25. Verify unrelated member cannot confirm a settlement.
-26. Verify confirmed settlement changes future balances.
-27. Verify confirmed settlement cannot be revoked.
-28. Verify expenses that existed before settlement confirmation are locked.
-29. Regenerate invite code/link and verify old invite no longer works.
+9. Rename an unclaimed placeholder member as admin.
+10. Claim placeholder during invite join and verify no duplicate member is created.
+11. Claim placeholder later from the members page and verify same-expense participant splits are merged.
+12. Verify placeholder claim is blocked after confirmed settlement participation.
+13. Delete an unused placeholder member as admin.
+14. Verify a normal member cannot delete a placeholder member.
+15. Verify used placeholder members cannot be deleted.
+16. Verify member can edit another member's expense.
+17. Verify member cannot delete another member's expense.
+18. Verify admin can delete any expense.
+19. Verify delete actions require confirmation.
+20. Verify custom split validation preserves submitted values after an error.
+21. Verify expense edits record the last editing user and surface in latest activity.
+22. Verify balance calculation after multiple expenses.
+23. Verify recommended settlement path gives each member at most one outgoing payment.
+24. Confirm a settlement as payer.
+25. Confirm a settlement as receiver.
+26. Confirm a settlement as admin.
+27. Verify unrelated member cannot confirm a settlement.
+28. Verify confirmed settlement changes future balances.
+29. Verify confirmed settlement cannot be revoked.
+30. Verify expenses that existed before settlement confirmation are locked.
+31. Regenerate invite code/link and verify old invite no longer works.
 
 ## 19. Implementation Notes
 

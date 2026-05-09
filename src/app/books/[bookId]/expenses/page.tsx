@@ -69,11 +69,8 @@ export default async function BookExpensesPage({
           </p>
         </div>
         <div className="topbar-actions">
-          <Link className="button secondary" href={`/books/${bookId}`}>
-            Overview
-          </Link>
-          <Link className="button secondary" href={`/books/${bookId}/members`}>
-            Members
+          <Link className="button secondary" href="/books">
+            Back to books
           </Link>
         </div>
       </header>
@@ -82,8 +79,11 @@ export default async function BookExpensesPage({
         <Link className="tab-link" href={`/books/${bookId}`}>
           Overview
         </Link>
-        <Link className="tab-link active" href={`/books/${bookId}/expenses`}>
-          Expenses
+        <Link
+          className="tab-link tab-link-primary active"
+          href={`/books/${bookId}/expenses`}
+        >
+          Add expense
         </Link>
         <Link className="tab-link" href={`/books/${bookId}/members`}>
           Members

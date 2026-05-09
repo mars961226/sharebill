@@ -40,11 +40,11 @@ export default async function BooksPage() {
           <p className="muted">Signed in as {user.displayName}</p>
         </div>
         <div className="topbar-actions">
-          <Link className="button secondary" href="/join">
-            Join book
-          </Link>
           <Link className="button primary" href="/books/new">
             New book
+          </Link>
+          <Link className="button secondary" href="/join">
+            Join book
           </Link>
           <form action={logoutAction}>
             <button className="button secondary" type="submit">

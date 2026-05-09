@@ -1,6 +1,12 @@
 "use client";
 
-import { deleteExpenseAction } from "@/server/expenses/actions";
+import { useActionState } from "react";
+import {
+  deleteExpenseAction,
+  type ExpenseActionState,
+} from "@/server/expenses/actions";
+
+const initialState: ExpenseActionState = {};
 
 export function DeleteExpenseForm({
   bookId,
@@ -11,9 +17,14 @@ export function DeleteExpenseForm({
   expenseId: string;
   expenseTitle: string;
 }) {
+  const [state, formAction, isPending] = useActionState(
+    deleteExpenseAction,
+    initialState,
+  );
+
   return (
     <form
-      action={deleteExpenseAction}
+      action={formAction}
       onSubmit={(event) => {
         const confirmed = window.confirm(
           `Delete expense "${expenseTitle}"? This cannot be undone.`,
@@ -26,8 +37,9 @@ export function DeleteExpenseForm({
     >
       <input name="bookId" type="hidden" value={bookId} />
       <input name="expenseId" type="hidden" value={expenseId} />
-      <button className="button danger small" type="submit">
-        Delete
+      {state.error ? <p className="alert error">{state.error}</p> : null}
+      <button className="button danger small" disabled={isPending} type="submit">
+        {isPending ? "Deleting..." : "Delete"}
       </button>
     </form>
   );
