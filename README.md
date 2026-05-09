@@ -24,7 +24,7 @@ Implemented so far:
 - Book creation, book list, book overview, and invite-code join flow.
 - Book list cards with total recorded expense amounts.
 - Book member list.
-- Temporary member creation, admin-only deletion, used-member delete blocking, and self-claim.
+- Temporary member creation, rename, admin-only deletion, used-member delete blocking, and self-claim.
 - Invite join choice between joining as yourself or claiming an available temporary member.
 - Expense creation, editing, deletion, equal split, and custom amount split.
 - Expense add form defaults the payer to the logged-in member.
@@ -37,6 +37,7 @@ Implemented so far:
 - Settlement history.
 - Soft locking of expenses that existed before a confirmed settlement.
 - Expense history shows both spent date and added date.
+- Expense edits track the last editing user and appear in overview latest activity.
 - Mobile expense page layout shows the add form before expense history.
 - Per-member total consumed ranking based on participant split amounts, including tied ranks.
 - Core money, balance, settlement-path, and placeholder-claim utilities with tests.
@@ -44,10 +45,8 @@ Implemented so far:
 Not implemented yet:
 
 - Inline temporary member creation from the expense form.
-- Placeholder member rename UI.
 - Invite code regeneration.
 - Book settings editing.
-- Mailpit/Mailhog local email service wiring.
 
 ## Local Setup
 
@@ -74,7 +73,36 @@ npm run dev
 
 Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-Local email should be tested with Mailpit or Mailhog using the SMTP values in `.env.example`.
+## Local Email Testing
+
+ShareBill sends welcome and password reset emails through SMTP. For local development,
+use Mailpit as a local inbox instead of sending real external email.
+
+Install and start Mailpit:
+
+```bash
+brew install mailpit
+brew services start mailpit
+```
+
+Make sure `.env` has:
+
+```env
+SMTP_HOST="localhost"
+SMTP_PORT="1025"
+SMTP_FROM="ShareBill <noreply@sharebill.local>"
+```
+
+Open the Mailpit inbox at [http://localhost:8025](http://localhost:8025).
+
+Recommended manual test flow:
+
+1. Start Mailpit.
+2. Start ShareBill with `npm run dev`.
+3. Register a new test account and confirm the welcome email appears in Mailpit.
+4. Use `/forgot-password` for that email address.
+5. Open the password reset email in Mailpit.
+6. Follow the reset link, set a new password, and log in with the new password.
 
 `npm run dev` uses Next.js Turbopack because the standard webpack dev server did not reliably serve generated CSS/JS chunks in the local Codex desktop environment.
 

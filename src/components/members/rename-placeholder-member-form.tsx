@@ -2,13 +2,13 @@
 
 import { useActionState } from "react";
 import {
-  claimPlaceholderMemberAction,
+  renamePlaceholderMemberAction,
   type MemberActionState,
 } from "@/server/members/actions";
 
 const initialState: MemberActionState = {};
 
-export function ClaimPlaceholderMemberForm({
+export function RenamePlaceholderMemberForm({
   bookId,
   memberId,
   displayName,
@@ -18,28 +18,25 @@ export function ClaimPlaceholderMemberForm({
   displayName: string;
 }) {
   const [state, formAction, isPending] = useActionState(
-    claimPlaceholderMemberAction,
+    renamePlaceholderMemberAction,
     initialState,
   );
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        const confirmed = window.confirm(
-          `Claim temporary member "${displayName}"? Their expenses and balances will be merged into your account. This cannot be undone.`,
-        );
-
-        if (!confirmed) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} className="rename-member-form">
       <input name="bookId" type="hidden" value={bookId} />
       <input name="memberId" type="hidden" value={memberId} />
+      <input
+        aria-label={`Rename temporary member ${displayName}`}
+        defaultValue={displayName}
+        name="displayName"
+        placeholder="Alex"
+        type="text"
+      />
       {state.error ? <p className="alert error">{state.error}</p> : null}
+      {state.success ? <p className="alert success">{state.success}</p> : null}
       <button className="button secondary small" disabled={isPending} type="submit">
-        {isPending ? "Claiming..." : "Claim"}
+        {isPending ? "Saving..." : "Rename"}
       </button>
     </form>
   );

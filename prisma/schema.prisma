@@ -34,6 +34,7 @@ model User {
   bookMembers          BookMember[]
   createdBooks         Book[]               @relation("BookCreator")
   createdExpenses      Expense[]            @relation("ExpenseCreator")
+  updatedExpenses      Expense[]            @relation("ExpenseUpdater")
   confirmedSettlements Settlement[]         @relation("SettlementConfirmer")
 }
 
@@ -109,16 +110,19 @@ model Expense {
   splitTotalCents         Int
   roundingDifferenceCents Int                  @default(0)
   createdById             String
+  updatedById             String?
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
   book                    Book                 @relation(fields: [bookId], references: [id], onDelete: Cascade)
   payer                   BookMember           @relation("ExpensePayer", fields: [payerMemberId], references: [id])
   createdBy               User                 @relation("ExpenseCreator", fields: [createdById], references: [id])
+  updatedBy               User?                @relation("ExpenseUpdater", fields: [updatedById], references: [id])
   participants            ExpenseParticipant[]
 
   @@index([bookId])
   @@index([payerMemberId])
   @@index([createdById])
+  @@index([updatedById])
 }
 
 model ExpenseParticipant {

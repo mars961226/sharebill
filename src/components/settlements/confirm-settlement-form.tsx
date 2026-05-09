@@ -1,6 +1,12 @@
 "use client";
 
-import { confirmSettlementAction } from "@/server/settlements/actions";
+import { useActionState } from "react";
+import {
+  confirmSettlementAction,
+  type SettlementActionState,
+} from "@/server/settlements/actions";
+
+const initialState: SettlementActionState = {};
 
 export function ConfirmSettlementForm({
   bookId,
@@ -19,12 +25,17 @@ export function ConfirmSettlementForm({
   receiverName: string;
   amountLabel: string;
 }) {
+  const [state, formAction, isPending] = useActionState(
+    confirmSettlementAction,
+    initialState,
+  );
+
   return (
     <form
-      action={confirmSettlementAction}
+      action={formAction}
       onSubmit={(event) => {
         const confirmed = window.confirm(
-          `Confirm settlement: ${payerName} pays ${receiverName} ${amountLabel}? This cannot be undone in the MVP.`,
+          `Confirm settlement: ${payerName} pays ${receiverName} ${amountLabel}? This cannot be undone.`,
         );
 
         if (!confirmed) {
@@ -36,8 +47,9 @@ export function ConfirmSettlementForm({
       <input name="payerMemberId" type="hidden" value={payerMemberId} />
       <input name="receiverMemberId" type="hidden" value={receiverMemberId} />
       <input name="amountCents" type="hidden" value={amountCents} />
-      <button className="button primary small" type="submit">
-        Confirm
+      {state.error ? <p className="alert error">{state.error}</p> : null}
+      <button className="button primary small" disabled={isPending} type="submit">
+        {isPending ? "Confirming..." : "Confirm"}
       </button>
     </form>
   );

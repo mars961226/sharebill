@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ClaimPlaceholderMemberForm } from "@/components/members/claim-placeholder-member-form";
 import { CreatePlaceholderMemberForm } from "@/components/members/create-placeholder-member-form";
 import { DeletePlaceholderMemberForm } from "@/components/members/delete-placeholder-member-form";
+import { RenamePlaceholderMemberForm } from "@/components/members/rename-placeholder-member-form";
 import { requireCurrentUser } from "@/server/auth/session";
 import { prisma } from "@/server/db";
 
@@ -63,14 +64,8 @@ export default async function BookMembersPage({
           </p>
         </div>
         <div className="topbar-actions">
-          <Link className="button secondary" href={`/books/${bookId}/expenses`}>
-            Expenses
-          </Link>
-          <Link className="button secondary" href={`/books/${bookId}`}>
-            Overview
-          </Link>
           <Link className="button secondary" href="/books">
-            All books
+            Back to books
           </Link>
         </div>
       </header>
@@ -79,8 +74,8 @@ export default async function BookMembersPage({
         <Link className="tab-link" href={`/books/${bookId}`}>
           Overview
         </Link>
-        <Link className="tab-link" href={`/books/${bookId}/expenses`}>
-          Expenses
+        <Link className="tab-link tab-link-primary" href={`/books/${bookId}/expenses`}>
+          Add expense
         </Link>
         <Link className="tab-link active" href={`/books/${bookId}/members`}>
           Members
@@ -109,19 +104,41 @@ export default async function BookMembersPage({
                 const settlementUsageCount = placeholderSettlementUsageCount(member);
                 const isUsed = usageCount > 0;
                 const canClaim = settlementUsageCount === 0;
+                const disabledReasons = [
+                  !canClaim
+                    ? "Used in confirmed settlements, so it cannot be claimed yet."
+                    : null,
+                  currentMember.role !== "ADMIN"
+                    ? "Only admins can delete temporary members."
+                    : null,
+                ].filter((reason): reason is string => reason !== null);
 
                 return (
                   <div className="list-row member-row" key={member.id}>
                     <div>
-                      <span>{member.displayName}</span>
+                      <div className="member-title-row">
+                        <span>{member.displayName}</span>
+                        <strong>{isUsed ? "used" : "not joined"}</strong>
+                      </div>
                       {isUsed ? (
                         <p className="field-help">
                           Used in expenses or settlements, so it cannot be deleted.
                         </p>
                       ) : null}
+                      {disabledReasons.map((reason) => (
+                        <p className="field-help" key={reason}>
+                          {reason}
+                        </p>
+                      ))}
                     </div>
                     <div className="row-actions">
-                      <strong>{isUsed ? "used" : "not joined"}</strong>
+                      {currentMember.role === "ADMIN" ? (
+                        <RenamePlaceholderMemberForm
+                          bookId={bookId}
+                          displayName={member.displayName}
+                          memberId={member.id}
+                        />
+                      ) : null}
                       {canClaim ? (
                         <ClaimPlaceholderMemberForm
                           bookId={bookId}

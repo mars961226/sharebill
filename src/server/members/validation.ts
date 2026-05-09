@@ -10,6 +10,12 @@ export const deletePlaceholderMemberSchema = z.object({
   memberId: z.string().min(1),
 });
 
+export const renamePlaceholderMemberSchema = z.object({
+  bookId: z.string().min(1),
+  memberId: z.string().min(1),
+  displayName: z.string().trim().min(1),
+});
+
 export const claimPlaceholderMemberSchema = z.object({
   bookId: z.string().min(1),
   memberId: z.string().min(1),

@@ -7,6 +7,7 @@ import {
   claimPlaceholderMemberSchema,
   createPlaceholderMemberSchema,
   deletePlaceholderMemberSchema,
+  renamePlaceholderMemberSchema,
 } from "@/server/members/validation";
 import { mergePlaceholderIntoRealMember } from "@/server/members/claim";
 
@@ -59,16 +60,21 @@ export async function createPlaceholderMemberAction(
 }
 
 export async function deletePlaceholderMemberAction(
+  _previousState: MemberActionState,
   formData: FormData,
-): Promise<void> {
+): Promise<MemberActionState> {
   const user = await requireCurrentUser();
-  const parsed = deletePlaceholderMemberSchema.parse(
+  const parsed = deletePlaceholderMemberSchema.safeParse(
     Object.fromEntries(formData),
   );
 
+  if (!parsed.success) {
+    return { error: "Temporary member is required." };
+  }
+
   const currentMember = await prisma.bookMember.findFirst({
     where: {
-      bookId: parsed.bookId,
+      bookId: parsed.data.bookId,
       userId: user.id,
       type: "REAL",
       role: "ADMIN",
@@ -79,13 +85,13 @@ export async function deletePlaceholderMemberAction(
   });
 
   if (!currentMember) {
-    throw new Error("Only book admins can delete temporary members.");
+    return { error: "Only book admins can delete temporary members." };
   }
 
   const placeholderMember = await prisma.bookMember.findFirst({
     where: {
-      id: parsed.memberId,
-      bookId: parsed.bookId,
+      id: parsed.data.memberId,
+      bookId: parsed.data.bookId,
       type: "PLACEHOLDER",
       userId: null,
     },
@@ -103,7 +109,7 @@ export async function deletePlaceholderMemberAction(
   });
 
   if (!placeholderMember) {
-    throw new Error("Temporary member not found.");
+    return { error: "Temporary member not found." };
   }
 
   const usageCount =
@@ -113,7 +119,7 @@ export async function deletePlaceholderMemberAction(
     placeholderMember._count.settlementsReceived;
 
   if (usageCount > 0) {
-    throw new Error("Temporary members used in expenses cannot be deleted.");
+    return { error: "Temporary members used in expenses cannot be deleted." };
   }
 
   await prisma.bookMember.delete({
@@ -122,19 +128,77 @@ export async function deletePlaceholderMemberAction(
     },
   });
 
-  revalidatePath(`/books/${parsed.bookId}`);
-  revalidatePath(`/books/${parsed.bookId}/members`);
+  revalidatePath(`/books/${parsed.data.bookId}`);
+  revalidatePath(`/books/${parsed.data.bookId}/members`);
+  return { success: "Temporary member deleted." };
 }
 
-export async function claimPlaceholderMemberAction(
+export async function renamePlaceholderMemberAction(
+  _previousState: MemberActionState,
   formData: FormData,
-): Promise<void> {
+): Promise<MemberActionState> {
   const user = await requireCurrentUser();
-  const parsed = claimPlaceholderMemberSchema.parse(Object.fromEntries(formData));
+  const parsed = renamePlaceholderMemberSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+
+  if (!parsed.success) {
+    return { error: "Temporary member name is required." };
+  }
 
   const currentMember = await prisma.bookMember.findFirst({
     where: {
-      bookId: parsed.bookId,
+      bookId: parsed.data.bookId,
+      userId: user.id,
+      type: "REAL",
+      role: "ADMIN",
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!currentMember) {
+    return { error: "Only book admins can rename temporary members." };
+  }
+
+  const result = await prisma.bookMember.updateMany({
+    where: {
+      id: parsed.data.memberId,
+      bookId: parsed.data.bookId,
+      type: "PLACEHOLDER",
+      userId: null,
+    },
+    data: {
+      displayName: parsed.data.displayName.trim(),
+    },
+  });
+
+  if (result.count === 0) {
+    return { error: "Temporary member not found." };
+  }
+
+  revalidatePath("/books");
+  revalidatePath(`/books/${parsed.data.bookId}`);
+  revalidatePath(`/books/${parsed.data.bookId}/expenses`);
+  revalidatePath(`/books/${parsed.data.bookId}/members`);
+  return { success: "Temporary member renamed." };
+}
+
+export async function claimPlaceholderMemberAction(
+  _previousState: MemberActionState,
+  formData: FormData,
+): Promise<MemberActionState> {
+  const user = await requireCurrentUser();
+  const parsed = claimPlaceholderMemberSchema.safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) {
+    return { error: "Temporary member is required." };
+  }
+
+  const currentMember = await prisma.bookMember.findFirst({
+    where: {
+      bookId: parsed.data.bookId,
       userId: user.id,
       type: "REAL",
     },
@@ -144,17 +208,27 @@ export async function claimPlaceholderMemberAction(
   });
 
   if (!currentMember) {
-    throw new Error("You do not have access to this book.");
+    return { error: "You do not have access to this book." };
   }
 
-  await mergePlaceholderIntoRealMember({
-    bookId: parsed.bookId,
-    placeholderMemberId: parsed.memberId,
-    realMemberId: currentMember.id,
-  });
+  try {
+    await mergePlaceholderIntoRealMember({
+      bookId: parsed.data.bookId,
+      placeholderMemberId: parsed.data.memberId,
+      realMemberId: currentMember.id,
+    });
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Temporary member could not be claimed.",
+    };
+  }
 
   revalidatePath("/books");
-  revalidatePath(`/books/${parsed.bookId}`);
-  revalidatePath(`/books/${parsed.bookId}/expenses`);
-  revalidatePath(`/books/${parsed.bookId}/members`);
+  revalidatePath(`/books/${parsed.data.bookId}`);
+  revalidatePath(`/books/${parsed.data.bookId}/expenses`);
+  revalidatePath(`/books/${parsed.data.bookId}/members`);
+  return { success: "Temporary member claimed." };
 }
