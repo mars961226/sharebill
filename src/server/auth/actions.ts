@@ -47,7 +47,15 @@ export async function registerAction(
       },
     });
 
-    await sendWelcomeEmail({ email: user.email, displayName: user.displayName });
+    try {
+      await sendWelcomeEmail({
+        email: user.email,
+        displayName: user.displayName,
+      });
+    } catch (error) {
+      console.error("Failed to send welcome email", error);
+    }
+
     await createSession(user.id);
   } catch (error) {
     if (isUniqueConstraintError(error)) {
@@ -129,7 +137,7 @@ export async function forgotPasswordAction(
 
   return {
     success:
-      "If that email exists in ShareBill, a password reset link has been sent.",
+      "If that email exists in SharingBill, a password reset link has been sent.",
   };
 }
 

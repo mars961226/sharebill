@@ -1,10 +1,10 @@
-# ShareBill MVP PRD
+# SharingBill MVP PRD
 
 Last updated: 2026-05-09
 
 ## 1. Overview
 
-ShareBill is a web-based shared expense book for groups. Users can create or join shared books, record expenses involving multiple people, and use the system-generated settlement path to clear balances.
+SharingBill is a web-based shared expense book for groups. Users can create or join shared books, record expenses involving multiple people, and use the system-generated settlement path to clear balances.
 
 The MVP prioritizes correct backend behavior, simple web workflows, and a usable responsive UI for desktop and mobile browsers. Native mobile apps are out of scope.
 
@@ -868,6 +868,6 @@ Minimum test scenarios:
 - Keep expense history and settlement history auditable.
 - Prefer creating records over mutating financial history.
 - Keep email sending behind a provider abstraction.
-- Use SMTP-compatible config for local and production email delivery.
+- Use SMTP-compatible config for local email delivery and an HTTPS API provider such as Resend for production email delivery.
 - UI should use "recommended settlement path" wording.
 - Internal naming can use `placeholder member`; Chinese UI can use "临时成员" or "待加入成员".

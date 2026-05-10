@@ -1,11 +1,12 @@
 {
-  "name": "sharebill",
+  "name": "sharingbill",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "next build",
-    "start": "next start",
+    "build": "next build && mkdir -p .next/standalone/.next && cp -R .next/static .next/standalone/.next/static",
+    "start": "HOSTNAME=0.0.0.0 node .next/standalone/server.js",
+    "postinstall": "prisma generate",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "prisma:generate": "prisma generate",
