@@ -12,7 +12,7 @@ Recommended MVP stack:
 - PostgreSQL for local and production persistence.
 - Railway + PostgreSQL for the MVP deployment target.
 - Custom email/password authentication.
-- SMTP-compatible email sending.
+- Email abstraction with local SMTP/Mailpit and production HTTPS API delivery.
 - React Server Components for data-heavy pages.
 - Server Actions or route handlers for mutations.
 
@@ -23,7 +23,7 @@ Reasoning:
 - Next.js keeps frontend and backend in one repo, which is faster for an MVP.
 - Prisma gives a clear schema for users, books, members, expenses, and settlements.
 - PostgreSQL keeps local and production database behavior aligned.
-- SMTP abstraction supports Mailpit/Mailhog locally and Resend/Postmark/SendGrid/AWS SES later.
+- The email abstraction supports Mailpit/Mailhog locally and Resend's HTTPS API in production.
 
 ## 2. Runtime Notes
 
@@ -295,6 +295,7 @@ SMTP_SECURE="false"
 SMTP_USER=""
 SMTP_PASS=""
 SMTP_FROM="ShareBill <noreply@sharebill.local>"
+RESEND_API_KEY=""
 ```
 
 Production deployment variables:
@@ -303,12 +304,8 @@ Production deployment variables:
 DATABASE_URL="<Railway PostgreSQL reference variable>"
 APP_URL="<deployed HTTPS app URL>"
 SESSION_SECRET="<long random secret>"
-SMTP_HOST="<production SMTP host>"
-SMTP_PORT="<production SMTP port>"
-SMTP_SECURE="<true or false>"
-SMTP_USER="<production SMTP user>"
-SMTP_PASS="<production SMTP password>"
-SMTP_FROM="ShareBill <noreply@your-domain.example>"
+SMTP_FROM="SharingBill <noreply@sharingbill.com>"
+RESEND_API_KEY="<Resend API key>"
 ```
 
 ## 9. Implementation Order

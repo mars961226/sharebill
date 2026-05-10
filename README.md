@@ -20,7 +20,7 @@ Implemented so far:
 - HTTP-only cookie sessions with a 30-day expiry.
 - Logout.
 - Password reset flow backend and UI.
-- SMTP email abstraction for welcome and reset emails.
+- Email abstraction for welcome and reset emails, using Mailpit locally and Resend's HTTPS API in production.
 - Book creation, book list, book overview, and invite-code join flow.
 - Book list cards with total recorded expense amounts.
 - Book member list.
@@ -83,8 +83,9 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
 ## Local Email Testing
 
-ShareBill sends welcome and password reset emails through SMTP. For local development,
-use Mailpit as a local inbox instead of sending real external email.
+ShareBill sends welcome and password reset emails through the email abstraction.
+For local development, use SMTP with Mailpit as a local inbox instead of sending
+real external email.
 
 Install and start Mailpit:
 
@@ -100,6 +101,7 @@ SMTP_HOST="localhost"
 SMTP_PORT="1025"
 SMTP_SECURE="false"
 SMTP_FROM="ShareBill <noreply@sharebill.local>"
+RESEND_API_KEY=""
 ```
 
 Open the Mailpit inbox at [http://localhost:8025](http://localhost:8025).
@@ -135,17 +137,14 @@ Railway setup:
 1. Create a Railway project from the GitHub repository.
 2. Add a PostgreSQL database service.
 3. In the Next.js service variables, reference the database service's `DATABASE_URL`.
-4. Set the remaining production variables:
+4. Set the remaining production variables. Railway blocks outbound SMTP on
+   non-Pro plans, so production should use Resend's HTTPS API instead of SMTP:
 
 ```env
 APP_URL="https://your-railway-domain.up.railway.app"
 SESSION_SECRET="replace-with-a-long-random-secret"
-SMTP_HOST="your-smtp-host"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="your-smtp-user"
-SMTP_PASS="your-smtp-password"
-SMTP_FROM="ShareBill <noreply@your-domain.example>"
+SMTP_FROM="SharingBill <noreply@sharingbill.com>"
+RESEND_API_KEY="re_..."
 ```
 
 The repository includes `railway.json` with:

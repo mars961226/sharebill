@@ -281,7 +281,7 @@ MVP needs email sending for:
 Recommended local development setup:
 
 - Use a local email catcher such as Mailpit or Mailhog.
-- The app sends email through SMTP to the local catcher.
+- The app sends local development email through SMTP to the local catcher.
 - Developer opens a local web UI to inspect emails.
 
 Example local flow:
@@ -304,7 +304,7 @@ Production email providers to consider later:
 
 Initial recommendation:
 
-- Use an SMTP-compatible abstraction so local and production email providers can be swapped through environment variables.
+- Use an email abstraction so local SMTP/Mailpit and production Resend HTTPS API delivery can be swapped through environment variables.
 
 ## 6. MVP Pages
 

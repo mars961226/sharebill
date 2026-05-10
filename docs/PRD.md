@@ -868,6 +868,6 @@ Minimum test scenarios:
 - Keep expense history and settlement history auditable.
 - Prefer creating records over mutating financial history.
 - Keep email sending behind a provider abstraction.
-- Use SMTP-compatible config for local and production email delivery.
+- Use SMTP-compatible config for local email delivery and an HTTPS API provider such as Resend for production email delivery.
 - UI should use "recommended settlement path" wording.
 - Internal naming can use `placeholder member`; Chinese UI can use "临时成员" or "待加入成员".
