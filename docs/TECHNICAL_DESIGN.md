@@ -1,6 +1,6 @@
 # ShareBill MVP Technical Design
 
-Last updated: 2026-05-09
+Last updated: 2026-05-10
 
 ## 1. Stack Decision
 
@@ -9,8 +9,8 @@ Recommended MVP stack:
 - Next.js App Router.
 - TypeScript.
 - Prisma ORM.
-- SQLite for local development.
-- PostgreSQL-compatible schema for future production deployment.
+- PostgreSQL for local and production persistence.
+- Railway + PostgreSQL for the MVP deployment target.
 - Custom email/password authentication.
 - SMTP-compatible email sending.
 - React Server Components for data-heavy pages.
@@ -22,7 +22,7 @@ Reasoning:
 - Backend correctness matters more than UI polish.
 - Next.js keeps frontend and backend in one repo, which is faster for an MVP.
 - Prisma gives a clear schema for users, books, members, expenses, and settlements.
-- SQLite keeps local setup simple.
+- PostgreSQL keeps local and production database behavior aligned.
 - SMTP abstraction supports Mailpit/Mailhog locally and Resend/Postmark/SendGrid/AWS SES later.
 
 ## 2. Runtime Notes
@@ -32,6 +32,9 @@ Current local environment:
 - Node and npm are available through Homebrew.
 - The app uses `npm` and `package-lock.json`.
 - `npm run dev` runs `next dev --turbo`.
+- `npm run build` creates a Next.js standalone output for Railway.
+- `npm run start` runs `.next/standalone/server.js` with `HOSTNAME=0.0.0.0` for Railway routing and healthchecks.
+- Railway runs `npx prisma migrate deploy` as the pre-deploy command.
 - Turbopack is used because the standard webpack dev server did not reliably serve generated CSS/JS chunks in the Codex desktop local environment.
 - `next.config.ts` allows `127.0.0.1` as a local development origin so Codex's in-app browser can access Next dev assets without cross-origin warnings.
 
@@ -277,18 +280,35 @@ Responsive behavior:
 Expected local services:
 
 - App server.
-- SQLite database file.
+- PostgreSQL database.
 - Mailpit or Mailhog for local email capture.
 
 Recommended environment variables:
 
 ```text
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 APP_URL="http://localhost:3000"
 SESSION_SECRET="dev-only-change-me"
 SMTP_HOST="localhost"
 SMTP_PORT="1025"
+SMTP_SECURE="false"
+SMTP_USER=""
+SMTP_PASS=""
 SMTP_FROM="ShareBill <noreply@sharebill.local>"
+```
+
+Production deployment variables:
+
+```text
+DATABASE_URL="<Railway PostgreSQL reference variable>"
+APP_URL="<deployed HTTPS app URL>"
+SESSION_SECRET="<long random secret>"
+SMTP_HOST="<production SMTP host>"
+SMTP_PORT="<production SMTP port>"
+SMTP_SECURE="<true or false>"
+SMTP_USER="<production SMTP user>"
+SMTP_PASS="<production SMTP password>"
+SMTP_FROM="ShareBill <noreply@your-domain.example>"
 ```
 
 ## 9. Implementation Order

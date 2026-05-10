@@ -11,6 +11,8 @@ type EmailMessage = {
 export async function sendEmail(message: EmailMessage): Promise<void> {
   const host = getOptionalEnv("SMTP_HOST");
   const port = Number(getOptionalEnv("SMTP_PORT") ?? "1025");
+  const user = getOptionalEnv("SMTP_USER");
+  const pass = getOptionalEnv("SMTP_PASS");
   const from = getOptionalEnv("SMTP_FROM") ?? "ShareBill <noreply@sharebill.local>";
 
   if (!host) {
@@ -21,7 +23,8 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: false,
+    secure: getOptionalEnv("SMTP_SECURE") === "true",
+    auth: user && pass ? { user, pass } : undefined,
   });
 
   await transporter.sendMail({

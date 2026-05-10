@@ -15,7 +15,7 @@ The MVP lets users create books, invite members, record shared expenses, support
 Implemented so far:
 
 - Next.js App Router + TypeScript application scaffold.
-- Prisma schema and initial SQLite migration.
+- Prisma schema and PostgreSQL baseline migration for deployment.
 - Email/password registration and login.
 - HTTP-only cookie sessions with a 30-day expiry.
 - Logout.
@@ -59,7 +59,15 @@ cp .env.example .env
 npm install
 ```
 
-Initialize or update the local SQLite database:
+Use a PostgreSQL database for local development. The same Prisma schema is used in
+production, so local development should point `DATABASE_URL` at a Postgres
+database instead of SQLite:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+```
+
+Initialize or update the local database:
 
 ```bash
 npm run prisma:migrate
@@ -90,6 +98,7 @@ Make sure `.env` has:
 ```env
 SMTP_HOST="localhost"
 SMTP_PORT="1025"
+SMTP_SECURE="false"
 SMTP_FROM="ShareBill <noreply@sharebill.local>"
 ```
 
@@ -116,3 +125,40 @@ npm run typecheck
 npm run build
 npm audit
 ```
+
+## Railway Deployment
+
+The recommended MVP deployment path is Railway + PostgreSQL.
+
+Railway setup:
+
+1. Create a Railway project from the GitHub repository.
+2. Add a PostgreSQL database service.
+3. In the Next.js service variables, reference the database service's `DATABASE_URL`.
+4. Set the remaining production variables:
+
+```env
+APP_URL="https://your-railway-domain.up.railway.app"
+SESSION_SECRET="replace-with-a-long-random-secret"
+SMTP_HOST="your-smtp-host"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="your-smtp-user"
+SMTP_PASS="your-smtp-password"
+SMTP_FROM="ShareBill <noreply@your-domain.example>"
+```
+
+The repository includes `railway.json` with:
+
+- `buildCommand`: `npm run build`
+- `startCommand`: `npm run start`
+- `preDeployCommand`: `npx prisma migrate deploy`
+- healthcheck path: `/login`
+
+`npm run start` binds the standalone Next.js server to `0.0.0.0`, which is
+required for Railway's public router and healthcheck to reach the container.
+
+After deploying, generate a public Railway domain, update `APP_URL` to that
+domain, redeploy once, and run the manual smoke test for registration, login,
+forgot password, invite join, placeholder claim, expense CRUD, and settlement
+confirmation.
