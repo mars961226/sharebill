@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/server/db";
 import { createToken, hashToken } from "@/server/auth/tokens";
 
-const SESSION_COOKIE = "sharebill_session";
+const SESSION_COOKIE = "sharingbill_session";
 const SESSION_DAYS = 30;
 
 export async function createSession(userId: string): Promise<void> {

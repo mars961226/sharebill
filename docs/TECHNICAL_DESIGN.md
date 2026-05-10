@@ -1,4 +1,4 @@
-# ShareBill MVP Technical Design
+# SharingBill MVP Technical Design
 
 Last updated: 2026-05-10
 
@@ -294,7 +294,7 @@ SMTP_PORT="1025"
 SMTP_SECURE="false"
 SMTP_USER=""
 SMTP_PASS=""
-SMTP_FROM="ShareBill <noreply@sharebill.local>"
+SMTP_FROM="SharingBill <noreply@sharingbill.local>"
 RESEND_API_KEY=""
 ```
 
@@ -302,11 +302,18 @@ Production deployment variables:
 
 ```text
 DATABASE_URL="<Railway PostgreSQL reference variable>"
-APP_URL="<deployed HTTPS app URL>"
+APP_URL="https://app.sharingbill.com"
 SESSION_SECRET="<long random secret>"
 SMTP_FROM="SharingBill <noreply@sharingbill.com>"
 RESEND_API_KEY="<Resend API key>"
 ```
+
+Production domain routing:
+
+- `https://app.sharingbill.com` is the canonical app domain and should be used
+  for `APP_URL`, password reset links, and invite links.
+- `https://www.sharingbill.com` serves the public landing page from the same
+  Railway service.
 
 ## 9. Implementation Order
 

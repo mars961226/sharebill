@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "ShareBill",
+  title: "SharingBill",
   description: "Shared expense books for groups.",
 };
 

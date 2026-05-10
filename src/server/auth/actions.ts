@@ -137,7 +137,7 @@ export async function forgotPasswordAction(
 
   return {
     success:
-      "If that email exists in ShareBill, a password reset link has been sent.",
+      "If that email exists in SharingBill, a password reset link has been sent.",
   };
 }
 

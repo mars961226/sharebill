@@ -1,10 +1,10 @@
-# ShareBill MVP PRD Draft
+# SharingBill MVP PRD Draft
 
 Last updated: 2026-05-09
 
 ## 1. Product Positioning
 
-ShareBill is a web-based shared expense book for groups.
+SharingBill is a web-based shared expense book for groups.
 
 The MVP focuses on:
 

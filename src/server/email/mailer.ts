@@ -14,7 +14,7 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
   const user = getOptionalEnv("SMTP_USER");
   const pass = getOptionalEnv("SMTP_PASS");
   const resendApiKey = getOptionalEnv("RESEND_API_KEY");
-  const from = getOptionalEnv("SMTP_FROM") ?? "ShareBill <noreply@sharebill.local>";
+  const from = getOptionalEnv("SMTP_FROM") ?? "SharingBill <noreply@sharingbill.local>";
 
   if (resendApiKey) {
     await sendWithResend({ from, message, apiKey: resendApiKey });
@@ -81,8 +81,8 @@ export async function sendWelcomeEmail({
 }): Promise<void> {
   await sendEmail({
     to: email,
-    subject: "Welcome to ShareBill",
-    text: `Hi ${displayName}, welcome to ShareBill.`,
+    subject: "Welcome to SharingBill",
+    text: `Hi ${displayName}, welcome to SharingBill.`,
   });
 }
 
@@ -95,7 +95,7 @@ export async function sendPasswordResetEmail({
 }): Promise<void> {
   await sendEmail({
     to: email,
-    subject: "Reset your ShareBill password",
+    subject: "Reset your SharingBill password",
     text: `Open this link to reset your password: ${resetUrl}`,
   });
 }

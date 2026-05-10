@@ -1,6 +1,6 @@
-# ShareBill
+# SharingBill
 
-ShareBill is a web-based shared expense book for groups.
+SharingBill is a web-based shared expense book for groups.
 
 The MVP lets users create books, invite members, record shared expenses, support placeholder members before real users join, and calculate a recommended settlement path where each person pays at most one other person.
 
@@ -83,7 +83,7 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
 ## Local Email Testing
 
-ShareBill sends welcome and password reset emails through the email abstraction.
+SharingBill sends welcome and password reset emails through the email abstraction.
 For local development, use SMTP with Mailpit as a local inbox instead of sending
 real external email.
 
@@ -100,7 +100,7 @@ Make sure `.env` has:
 SMTP_HOST="localhost"
 SMTP_PORT="1025"
 SMTP_SECURE="false"
-SMTP_FROM="ShareBill <noreply@sharebill.local>"
+SMTP_FROM="SharingBill <noreply@sharingbill.local>"
 RESEND_API_KEY=""
 ```
 
@@ -109,7 +109,7 @@ Open the Mailpit inbox at [http://localhost:8025](http://localhost:8025).
 Recommended manual test flow:
 
 1. Start Mailpit.
-2. Start ShareBill with `npm run dev`.
+2. Start SharingBill with `npm run dev`.
 3. Register a new test account and confirm the welcome email appears in Mailpit.
 4. Use `/forgot-password` for that email address.
 5. Open the password reset email in Mailpit.
@@ -141,7 +141,7 @@ Railway setup:
    non-Pro plans, so production should use Resend's HTTPS API instead of SMTP:
 
 ```env
-APP_URL="https://your-railway-domain.up.railway.app"
+APP_URL="https://app.sharingbill.com"
 SESSION_SECRET="replace-with-a-long-random-secret"
 SMTP_FROM="SharingBill <noreply@sharingbill.com>"
 RESEND_API_KEY="re_..."
@@ -157,7 +157,11 @@ The repository includes `railway.json` with:
 `npm run start` binds the standalone Next.js server to `0.0.0.0`, which is
 required for Railway's public router and healthcheck to reach the container.
 
-After deploying, generate a public Railway domain, update `APP_URL` to that
-domain, redeploy once, and run the manual smoke test for registration, login,
-forgot password, invite join, placeholder claim, expense CRUD, and settlement
-confirmation.
+Production uses two custom domains:
+
+- `https://app.sharingbill.com` for the application and all auth/invite links.
+- `https://www.sharingbill.com` for the public landing page.
+
+After changing `APP_URL` or domain routing, redeploy once and run the manual
+smoke test for registration, login, forgot password, invite join, placeholder
+claim, expense CRUD, and settlement confirmation.
