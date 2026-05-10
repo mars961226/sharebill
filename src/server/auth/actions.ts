@@ -47,7 +47,15 @@ export async function registerAction(
       },
     });
 
-    await sendWelcomeEmail({ email: user.email, displayName: user.displayName });
+    try {
+      await sendWelcomeEmail({
+        email: user.email,
+        displayName: user.displayName,
+      });
+    } catch (error) {
+      console.error("Failed to send welcome email", error);
+    }
+
     await createSession(user.id);
   } catch (error) {
     if (isUniqueConstraintError(error)) {

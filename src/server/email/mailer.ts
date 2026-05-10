@@ -25,6 +25,9 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
     port,
     secure: getOptionalEnv("SMTP_SECURE") === "true",
     auth: user && pass ? { user, pass } : undefined,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 10_000,
   });
 
   await transporter.sendMail({
